@@ -9,11 +9,15 @@ import 'package:inventory_management_system/screens/dashboard_screen.dart';
 Future <void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform
+    );
 
   runApp(const MyApp());
+  } catch (e) {
+    print("startup error: $e");
+  }
 }
 
 class MyApp extends StatelessWidget {
