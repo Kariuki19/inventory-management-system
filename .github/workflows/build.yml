@@ -20,7 +20,8 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true # Added caching to make future builds much faster
+          cache: true 
+          cache-key: v2-${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
 
       - name: Install dependencies
         run: flutter pub get
