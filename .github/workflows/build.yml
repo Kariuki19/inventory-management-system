@@ -2,16 +2,16 @@ name: Flutter Build APK
 
 on:
   push:
-    branches: [ main ] 
+    branches: [ main ] # Change to master if your default branch is master
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4 # Updated to v4 for better performance
 
       - name: Set up Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4 # Updated to v4
         with:
           distribution: 'zulu'
           java-version: '17'
@@ -20,6 +20,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true # Added caching to make future builds much faster
 
       - name: Install dependencies
         run: flutter pub get
@@ -28,7 +29,7 @@ jobs:
         run: flutter build apk --release
 
       - name: Upload APK
-* uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4 # Fixed the bullet point syntax error (*)
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
