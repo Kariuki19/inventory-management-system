@@ -22,7 +22,7 @@ jobs:
           channel: 'stable'
           flutter-version: '3.32.8'
           cache: true 
-          cache-key: v2-${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
+          cache-key: v5-${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
 
       - name: Install dependencies
         run: flutter pub get
