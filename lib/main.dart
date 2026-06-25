@@ -43,11 +43,11 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      home: const WidgetTree(),   // keep this for login/user flow
+      home: const DashboardScreen(),   // keep this for login/user flow
       //const MyHomePage(title: 'Inventory Home Page'),
-      routes: {
-        '/dashboard': (context) => const DashboardScreen(), // route for Dashboard
-      },
+      // routes: {
+      //   '/dashboard': (context) => const DashboardScreen(), // route for Dashboard
+      // },
     );
   }
 }
