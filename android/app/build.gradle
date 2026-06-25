@@ -72,7 +72,6 @@ flutter {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
      // Import the Firebase BoM
   implementation platform('com.google.firebase:firebase-bom:34.0.0')
