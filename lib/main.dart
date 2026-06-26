@@ -14,7 +14,7 @@ Future<void> main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    debugPrint("Firebase initialization failed: $e");
+    debugPrint("Firebase init failed: $e");
   }
 
   runApp(const MyApp());
