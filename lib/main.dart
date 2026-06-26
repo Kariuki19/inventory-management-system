@@ -6,18 +6,18 @@ import 'package:inventory_management_system/screens/dashboard_screen.dart';
 
 // import 'package:auth_firebase/firebase_options.dart';
 // import 'pages/signup/signup.dart';
-Future <void> main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
     await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform
+      options: DefaultFirebaseOptions.currentPlatform,
     );
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
 
   runApp(const MyApp());
-  } catch (e) {
-    print("startup error: $e");
-  }
 }
 
 class MyApp extends StatelessWidget {
@@ -47,7 +47,14 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      home: const DashboardScreen(),   // keep this for login/user flow
+      home: const Scaffold(
+  body: Center(
+    child: Text(
+      "HELLO",
+      style: TextStyle(fontSize: 32),
+    ),
+  ),
+),   // keep this for login/user flow
       //const MyHomePage(title: 'Inventory Home Page'),
       // routes: {
       //   '/dashboard': (context) => const DashboardScreen(), // route for Dashboard
