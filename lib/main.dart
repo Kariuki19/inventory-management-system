@@ -20,6 +20,7 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -47,14 +48,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      home: const Scaffold(
-  body: Center(
-    child: Text(
-      "HELLO",
-      style: TextStyle(fontSize: 32),
-    ),
-  ),
-),   // keep this for login/user flow
+      home: const DashboardScreen(),   // keep this for login/user flow
       //const MyHomePage(title: 'Inventory Home Page'),
       // routes: {
       //   '/dashboard': (context) => const DashboardScreen(), // route for Dashboard
