@@ -2,7 +2,7 @@ name: Flutter Build APK
 
 on:
   push:
-    branches: [ main ] 
+    branches: [ amidu-inventory-app-improved ] 
 
 jobs:
   build:
