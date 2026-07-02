@@ -5,7 +5,7 @@ class DemoService {
   static const String _sessionStartKey = 'demo_session_start';
 
   /// Guest sandbox duration — change here to use 30 min, 24 h, or 7 days.
-  static const Duration guestDemoDuration = Duration(minutes: 30);
+  static const Duration guestDemoDuration = Duration(minutes: 5);
 
   static Future<void> startSession() async {
     final prefs = await SharedPreferences.getInstance();
