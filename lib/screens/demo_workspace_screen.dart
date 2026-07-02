@@ -1,83 +1,86 @@
 import 'package:flutter/material.dart';
 import '../services/inventory_service.dart';
+import '../services/demo_service.dart';
+import '../widgets/demo_countdown_banner.dart';
+import 'demo_expired_screen.dart';
 import 'home_page.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class DemoWorkspaceScreen extends StatefulWidget {
-  const DemoWorkspaceScreen({Key? key}) : super(key: key);
+  const DemoWorkspaceScreen({super.key});
 
   @override
-  _DemoWorkspaceScreenState createState() => _DemoWorkspaceScreenState();
+  State<DemoWorkspaceScreen> createState() => _DemoWorkspaceScreenState();
 }
 
 class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
+  bool _sessionReady = false;
+
   @override
   void initState() {
     super.initState();
-    // Enable Demo Mode
+    _initDemoSession();
+  }
+
+  Future<void> _initDemoSession() async {
+    if (await DemoService.isSessionExpired()) {
+      if (mounted) _redirectToExpired();
+      return;
+    }
+
+    await DemoService.startSession();
     InventoryService.isDemoMode = true;
+
+    if (mounted) {
+      setState(() => _sessionReady = true);
+    }
+  }
+
+  void _redirectToExpired() {
+    InventoryService.isDemoMode = false;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => const DemoExpiredScreen(
+          reason: DemoExpiryReason.guestSession,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleDemoExpired() async {
+    await DemoService.clearSession();
+    if (mounted) _redirectToExpired();
+  }
+
+  void _exitDemo() {
+    Navigator.of(context).pop();
   }
 
   @override
   void dispose() {
-    // Disable Demo Mode when leaving
     InventoryService.isDemoMode = false;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_sessionReady) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       body: Column(
         children: [
-          // Banner
-          Container(
-            width: double.infinity,
-            color: Colors.orange.shade700,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.info_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    'This is a temporary sandbox session. Data will not be saved.',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.white24,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    minimumSize: Size.zero,
-                  ),
-                  child: Text(
-                    'Exit Demo',
-                    style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
+          DemoCountdownBanner(
+            getRemainingTime: DemoService.getRemainingTime,
+            onExpired: _handleDemoExpired,
+            message: 'Free demo — data is not saved',
+            onExit: _exitDemo,
           ),
-          // Wrap the HomePage in Expanded so it takes the rest of the screen
-          // We wrap it in a nested Navigator or just Expanded?
-          // Since HomePage provides its own Scaffold with AppBar, putting it inside a Column
-          // might cause layout issues (Scaffold inside Column inside Scaffold).
-          // Let's use Expanded.
-          Expanded(
+          const Expanded(
             child: ClipRect(
-              child: const HomePage(),
+              child: HomePage(),
             ),
           ),
         ],

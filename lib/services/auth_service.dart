@@ -52,31 +52,7 @@ class AuthService {
 
           if (userDoc.exists) {
             final userData = userDoc.data() as Map<String, dynamic>;
-
-            _currentUser = AppUser(
-              id: firebaseUser.uid,
-              email: firebaseUser.email ?? '',
-              displayName:
-                  userData['displayName'] ?? firebaseUser.displayName ?? 'User',
-              profilePhotoPath: userData['profilePhotoPath'],
-              role: _stringToUserRole(userData['role'] ?? 'staff'),
-              createdAt: userData['createdAt'] != null
-                  ? (userData['createdAt'] as Timestamp).toDate()
-                  : DateTime.now(),
-              lastLoginAt: userData['lastLoginAt'] != null
-                  ? (userData['lastLoginAt'] as Timestamp).toDate()
-                  : DateTime.now(),
-              isActive: userData['isActive'] ?? true,
-              phone: userData['phone'] ?? '',
-              emailNotificationsEnabled:
-                  userData['emailNotificationsEnabled'] ?? true,
-              smsNotificationsEnabled:
-                  userData['smsNotificationsEnabled'] ?? true,
-              expiryAlertsEnabled: userData['expiryAlertsEnabled'] ?? true,
-              stockAlertsEnabled: userData['stockAlertsEnabled'] ?? true,
-              predictionAlertsEnabled:
-                  userData['predictionAlertsEnabled'] ?? true,
-            );
+            _currentUser = AppUser.fromMap(userData, firebaseUser.uid);
           } else {
             // Create new user document if it doesn't exist
             final newUser = AppUser(
@@ -353,29 +329,7 @@ class AuthService {
 
       if (userDoc.exists) {
         final userData = userDoc.data() as Map<String, dynamic>;
-
-        _currentUser = AppUser(
-          id: firebaseUser.uid,
-          email: firebaseUser.email ?? '',
-          displayName:
-              userData['displayName'] ?? firebaseUser.displayName ?? 'User',
-          profilePhotoPath: userData['profilePhotoPath'],
-          role: _stringToUserRole(userData['role'] ?? 'staff'),
-          createdAt: userData['createdAt'] != null
-              ? (userData['createdAt'] as Timestamp).toDate()
-              : DateTime.now(),
-          lastLoginAt: userData['lastLoginAt'] != null
-              ? (userData['lastLoginAt'] as Timestamp).toDate()
-              : DateTime.now(),
-          isActive: userData['isActive'] ?? true,
-          phone: userData['phone'] ?? '',
-          emailNotificationsEnabled:
-              userData['emailNotificationsEnabled'] ?? true,
-          smsNotificationsEnabled: userData['smsNotificationsEnabled'] ?? true,
-          expiryAlertsEnabled: userData['expiryAlertsEnabled'] ?? true,
-          stockAlertsEnabled: userData['stockAlertsEnabled'] ?? true,
-          predictionAlertsEnabled: userData['predictionAlertsEnabled'] ?? true,
-        );
+        _currentUser = AppUser.fromMap(userData, firebaseUser.uid);
 
         return _currentUser;
       } else {

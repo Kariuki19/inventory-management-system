@@ -36,12 +36,22 @@ class TrialService {
 
   /// Returns the number of days remaining in the trial.
   static Future<int> getRemainingDays() async {
+    final remaining = await getRemainingDuration();
+    if (remaining <= Duration.zero) return 0;
+    return remaining.inDays;
+  }
+
+  /// Exact time remaining in the authenticated free trial.
+  static Future<Duration> getRemainingDuration() async {
     final firstLaunch = await getFirstLaunchDate();
-    final now = DateTime.now();
-    final difference = now.difference(firstLaunch).inDays;
-    
-    final remaining = trialDurationDays - difference;
-    return remaining < 0 ? 0 : remaining;
+    final expiry = firstLaunch.add(const Duration(days: trialDurationDays));
+    final remaining = expiry.difference(DateTime.now());
+    return remaining.isNegative ? Duration.zero : remaining;
+  }
+
+  static Future<DateTime> getExpiryTime() async {
+    final firstLaunch = await getFirstLaunchDate();
+    return firstLaunch.add(const Duration(days: trialDurationDays));
   }
 
   /// Reset trial (for development/testing purposes only)

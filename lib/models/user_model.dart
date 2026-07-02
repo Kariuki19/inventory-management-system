@@ -110,7 +110,10 @@ class AppUser {
       predictionAlertsEnabled: _convertToBool(map['predictionAlertsEnabled'] ??
           map['prediction_alerts_enabled'] ??
           true),
-      trialStartDate: parseTimestamp(map['trialStartDate'] ?? map['trial_start_date']),
+      trialStartDate: map['trialStartDate'] != null ||
+              map['trial_start_date'] != null
+          ? parseTimestamp(map['trialStartDate'] ?? map['trial_start_date'])
+          : null,
     );
   }
 

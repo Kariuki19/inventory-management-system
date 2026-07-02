@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import '../../services/trial_service.dart';
 import '../auth/login_register_page.dart';
+import '../demo_expired_screen.dart';
 import '../home_page.dart';
 
 class WidgetTree extends StatefulWidget {
@@ -12,6 +14,7 @@ class WidgetTree extends StatefulWidget {
 
 class _WidgetTreeState extends State<WidgetTree> {
   bool _isLoading = true;
+  bool _trialExpired = false;
 
   @override
   void initState() {
@@ -20,20 +23,32 @@ class _WidgetTreeState extends State<WidgetTree> {
   }
 
   Future<void> _checkAuthState() async {
-    // Give Firebase Auth a moment to initialize
     await Future.delayed(const Duration(milliseconds: 100));
 
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+    if (AuthService.currentUser != null) {
+      final expired = await TrialService.isTrialExpired();
+      if (mounted) {
+        setState(() {
+          _trialExpired = expired;
+          _isLoading = false;
+        });
+      }
+    } else if (mounted) {
+      setState(() => _isLoading = false);
     }
 
-    // Listen to auth state changes for future updates
-    AuthService.authStateChanges.listen((user) {
-      if (mounted) {
-        // Auth state changed, rebuild the widget
-        setState(() {});
+    AuthService.authStateChanges.listen((user) async {
+      if (!mounted) return;
+
+      if (user != null) {
+        final expired = await TrialService.isTrialExpired();
+        if (mounted) {
+          setState(() {
+            _trialExpired = expired;
+          });
+        }
+      } else if (mounted) {
+        setState(() => _trialExpired = false);
       }
     });
   }
@@ -46,22 +61,26 @@ class _WidgetTreeState extends State<WidgetTree> {
       );
     }
 
-    // Check current user synchronously
     final currentUser = AuthService.currentUser;
 
+    if (currentUser != null && _trialExpired) {
+      return const PageTransition(
+        type: PageTransitionType.fade,
+        child: DemoExpiredScreen(reason: DemoExpiryReason.authenticatedTrial),
+      );
+    }
+
     if (currentUser != null) {
-      // User is authenticated
       return PageTransition(
         type: PageTransitionType.professionalSlide,
         child: HomePage(currentUser: currentUser),
       );
-    } else {
-      // User is not authenticated
-      return const PageTransition(
-        type: PageTransitionType.fade,
-        child: LoginPage(),
-      );
     }
+
+    return const PageTransition(
+      type: PageTransitionType.fade,
+      child: LoginPage(),
+    );
   }
 }
 
@@ -119,7 +138,6 @@ class PageTransition extends StatelessWidget {
               ),
             );
           case PageTransitionType.professionalSlide:
-            // Professional slide up with fade - smooth and elegant
             return Transform.translate(
               offset: Offset(0, 30 * (1 - value)),
               child: Opacity(

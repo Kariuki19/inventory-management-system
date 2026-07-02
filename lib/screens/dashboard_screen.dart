@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -5,7 +6,10 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../services/inventory_service.dart';
 import '../services/auth_service.dart';
+import '../services/demo_service.dart';
 import '../services/trial_service.dart';
+import 'demo_expired_screen.dart';
+import 'upgrade_plan_screen.dart';
 import '../services/expiry_notification_service.dart';
 import '../models/user_model.dart';
 import '../models/inventory_item.dart';
@@ -190,53 +194,113 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildTrialBanner() {
     if (InventoryService.isDemoMode) return const SizedBox.shrink();
 
-    return FutureBuilder<int>(
-      future: TrialService.getRemainingDays(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox.shrink();
-        
-        final daysLeft = snapshot.data!;
-        // The user only sees this if trial is not expired (handled by SplashScreen)
-        final isWarning = daysLeft < 3;
-        
-        final backgroundColor = isWarning 
-            ? const Color(0xFFFF4D4D).withValues(alpha: 0.1) // Subtle red
-            : const Color(0xFFFF6B00).withValues(alpha: 0.1); // Cloudora Orange
-        
-        final textColor = isWarning 
-            ? const Color(0xFFFF4D4D) 
-            : const Color(0xFFFF6B00);
-            
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: textColor.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.timer_outlined, size: 20, color: textColor),
-              const SizedBox(width: 12),
-              Expanded(
+    return const _TrialCountdownBanner();
+  }
+}
+
+class _TrialCountdownBanner extends StatefulWidget {
+  const _TrialCountdownBanner();
+
+  @override
+  State<_TrialCountdownBanner> createState() => _TrialCountdownBannerState();
+}
+
+class _TrialCountdownBannerState extends State<_TrialCountdownBanner> {
+  Timer? _tickTimer;
+  Duration _remaining = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+    _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) => _refresh());
+  }
+
+  Future<void> _refresh() async {
+    final remaining = await TrialService.getRemainingDuration();
+    if (mounted) setState(() => _remaining = remaining);
+  }
+
+  @override
+  void dispose() {
+    _tickTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_remaining <= Duration.zero) return const SizedBox.shrink();
+
+    final daysLeft = _remaining.inDays;
+    final isWarning = daysLeft < 3 || _remaining.inHours < 24;
+
+    final backgroundColor = isWarning
+        ? const Color(0xFFFF4D4D).withValues(alpha: 0.1)
+        : const Color(0xFFFF6B00).withValues(alpha: 0.1);
+
+    final textColor = isWarning
+        ? const Color(0xFFFF4D4D)
+        : const Color(0xFFFF6B00);
+
+    final timeLabel = daysLeft >= 1
+        ? '$daysLeft day${daysLeft == 1 ? '' : 's'}'
+        : DemoService.formatDuration(_remaining);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const UpgradePlanScreen()),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: textColor.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.timer_outlined, size: 20, color: textColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Free trial — $timeLabel remaining',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+              ),
+            ),
+            if (daysLeft < 1)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: textColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
                 child: Text(
-                  'Your Free Trial ends in $daysLeft days',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
+                  DemoService.formatDuration(_remaining),
+                  style: GoogleFonts.robotoMono(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
                     color: textColor,
                   ),
                 ),
               ),
-            ],
-          ),
-        );
-      },
+            const SizedBox(width: 8),
+            Icon(Icons.chevron_right, size: 20, color: textColor),
+          ],
+        ),
+      ),
     );
   }
+}
 
-  Widget _buildDefaultAvatar() {
+extension _DashboardScreenStateExtension on _DashboardScreenState {
+  Widget _buildDefaultAvatarPlaceholder() {
     final initials = _getInitials(currentUser?.displayName ?? 'User');
     return Container(
       width: 60,
