@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/inventory_service.dart';
-import '../services/demo_service.dart';
+import '../services/demo_service.dart' as demo_service;
 import '../services/analytics_service.dart';
 import '../widgets/demo_countdown_banner.dart';
 import 'demo_expired_screen.dart';
@@ -26,12 +26,12 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   }
 
   Future<void> _initDemoSession() async {
-    if (await DemoService.isSessionExpired()) {
-      if (mounted) _redirectToExpired(DemoEndedReason.timeExpired);
+    if (await demo_service.DemoService.isSessionExpired()) {
+      if (mounted) _redirectToExpired(demo_service.DemoEndedReason.timeExpired);
       return;
     }
 
-    await DemoService.startSession();
+    await demo_service.DemoService.startSession();
     InventoryService.isDemoMode = true;
     _analytics.logDemoStarted();
 
@@ -40,7 +40,7 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     }
   }
 
-  void _redirectToExpired(DemoEndedReason reason) {
+  void _redirectToExpired(demo_service.DemoEndedReason reason) {
     if (_expiredHandled) return;
     _expiredHandled = true;
 
@@ -75,8 +75,10 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   Future<void> _handleDemoExpired() async {
     if (_expiredHandled || _isExiting) return;
 
-    await DemoService.clearSession(reason: DemoEndedReason.timeExpired);
-    if (mounted) _redirectToExpired(DemoEndedReason.timeExpired);
+    await demo_service.DemoService.clearSession(
+      reason: demo_service.DemoEndedReason.timeExpired,
+    );
+    if (mounted) _redirectToExpired(demo_service.DemoEndedReason.timeExpired);
   }
 
   /// Show confirmation dialog for manual exit
@@ -121,10 +123,12 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     _expiredHandled = true;
 
     InventoryService.isDemoMode = false;
-    await DemoService.clearSession(reason: DemoEndedReason.manualExit);
+    await demo_service.DemoService.clearSession(
+      reason: demo_service.DemoEndedReason.manualExit,
+    );
 
     if (mounted) {
-      _redirectToExpired(DemoEndedReason.manualExit);
+      _redirectToExpired(demo_service.DemoEndedReason.manualExit);
     }
   }
 
@@ -146,7 +150,7 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
       body: Column(
         children: [
           DemoCountdownBanner(
-            getRemainingTime: DemoService.getRemainingTime,
+            getRemainingTime: demo_service.DemoService.getRemainingTime,
             onExpired: _handleDemoExpired,
             message: 'Free demo — data is not saved',
             onExit: _showExitConfirmation,
