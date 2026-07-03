@@ -3,13 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/consultation_utils.dart';
 import '../services/analytics_service.dart';
+import '../services/demo_service.dart';
 import 'auth/login_register_page.dart';
 import 'landing_screen.dart';
 import 'upgrade_plan_screen.dart';
 
 enum DemoExpiryReason { guestSession, authenticatedTrial }
-
-enum DemoEndedReason { timeExpired, manualExit }
 
 class DemoExpiredScreen extends StatefulWidget {
   final DemoExpiryReason reason;
