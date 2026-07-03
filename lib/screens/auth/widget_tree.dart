@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import '../../services/demo_service.dart';
 import '../../services/trial_service.dart';
 import '../auth/login_register_page.dart';
 import '../demo_expired_screen.dart';
@@ -66,7 +67,7 @@ class _WidgetTreeState extends State<WidgetTree> {
     if (currentUser != null && _trialExpired) {
       return const PageTransition(
         type: PageTransitionType.fade,
-        child: DemoExpiredScreen(reason: DemoExpiryReason.authenticatedTrial),
+       child: DemoExpiredScreen(demoEndReason: DemoEndedReason.timeExpired),
       );
     }
 
