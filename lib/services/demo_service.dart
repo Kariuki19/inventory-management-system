@@ -1,11 +1,18 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Manages time-limited guest demo sessions (no account required).
+enum DemoEndedReason { timeExpired, manualExit }
+
 class DemoService {
   static const String _sessionStartKey = 'demo_session_start';
+  static const String _sessionTokenKey = 'demo_session_token';
+  static const String _sessionEndedReasonKey = 'demo_session_ended_reason';
 
-  /// Guest sandbox duration — change here to use 30 min, 24 h, or 7 days.
   static const Duration guestDemoDuration = Duration(minutes: 5);
+
+  /// Generate a unique session token for server-side validation
+  static String _generateSessionToken() {
+    return DateTime.now().millisecondsSinceEpoch.toString();
+  }
 
   static Future<void> startSession() async {
     final prefs = await SharedPreferences.getInstance();
@@ -18,7 +25,10 @@ class DemoService {
       }
     }
 
+    // Start new session with token
     await prefs.setString(_sessionStartKey, DateTime.now().toIso8601String());
+    await prefs.setString(_sessionTokenKey, _generateSessionToken());
+    await prefs.remove(_sessionEndedReasonKey);
   }
 
   static Future<DateTime?> getSessionStart() async {
@@ -26,6 +36,23 @@ class DemoService {
     final value = prefs.getString(_sessionStartKey);
     if (value == null) return null;
     return DateTime.parse(value);
+  }
+
+  /// Get the current session token (used for server-side validation)
+  static Future<String?> getSessionToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_sessionTokenKey);
+  }
+
+  /// Validate session is still active (backend would verify this server-side)
+  static Future<bool> validateSession() async {
+    // In production, this would make an API call to verify the session server-side
+    // For now, we check locally and flag for backend validation
+    if (await isSessionExpired()) {
+      return false;
+    }
+    final token = await getSessionToken();
+    return token != null;
   }
 
   static Future<DateTime> getExpiryTime() async {
@@ -50,9 +77,31 @@ class DemoService {
     return DateTime.now().difference(start) < guestDemoDuration;
   }
 
-  static Future<void> clearSession() async {
+  /// Clear session with optional reason for tracking
+  static Future<void> clearSession({
+    DemoEndedReason reason = DemoEndedReason.timeExpired,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_sessionStartKey);
+    await prefs.remove(_sessionTokenKey);
+    // Store reason for analytics before clearing
+    await prefs.setString(_sessionEndedReasonKey, reason.toString());
+  }
+
+  /// Get the reason why the session ended
+  static Future<DemoEndedReason?> getSessionEndReason() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString(_sessionEndedReasonKey);
+    if (value == null) return null;
+    return value.contains('timeExpired')
+        ? DemoEndedReason.timeExpired
+        : DemoEndedReason.manualExit;
+  }
+
+  /// Clear the session end reason after consuming it
+  static Future<void> clearSessionEndReason() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_sessionEndedReasonKey);
   }
 
   static String formatDuration(Duration duration) {
