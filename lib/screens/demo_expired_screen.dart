@@ -8,15 +8,13 @@ import 'auth/login_register_page.dart';
 import 'landing_screen.dart';
 import 'upgrade_plan_screen.dart';
 
-enum DemoExpiryReason { guestSession, authenticatedTrial }
-
 class DemoExpiredScreen extends StatefulWidget {
-  final DemoExpiryReason reason;
+  /// Optional parameter indicating why the demo ended
+  /// Used only for analytics/logging, not for UI changes
   final DemoEndedReason? demoEndReason;
 
   const DemoExpiredScreen({
     super.key,
-    this.reason = DemoExpiryReason.guestSession,
     this.demoEndReason = DemoEndedReason.timeExpired,
   });
 
@@ -49,6 +47,7 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
     const feedbackFormUrl =
         'https://docs.google.com/forms/d/e/1FAIpQLScdS8WHJ_WW-vAoVjOUTQrJcog4kQo6MZhb3MqC9fOCq3la7g/viewform?usp=header'; 
 
+
     try {
       if (await canLaunchUrl(Uri.parse(feedbackFormUrl))) {
         await launchUrl(
@@ -63,14 +62,11 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
 
   void _handleViewPlans() {
     _analytics.logViewPlansClicked();
-    final isGuest = widget.reason == DemoExpiryReason.guestSession;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (_) => UpgradePlanScreen(
-          title: isGuest ? 'Upgrade to Continue' : 'Choose Your Plan',
-          subtitle: isGuest
-              ? 'Pick a plan that works for you — no credit card required.'
-              : 'Select a plan to restore full access to your workspace.',
+        builder: (_) => const UpgradePlanScreen(
+          title: 'Upgrade to Continue',
+          subtitle: 'Pick a plan that works for you — no credit card required.',
         ),
       ),
     );
@@ -91,8 +87,6 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isGuest = widget.reason == DemoExpiryReason.guestSession;
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
@@ -119,9 +113,9 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Headline
+                // Headline - consistent for all demo end paths
                 Text(
-                  isGuest ? 'Your Demo Has Ended' : 'Your Free Trial Has Ended',
+                  'Your Demo Has Ended',
                   style: GoogleFonts.poppins(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -131,10 +125,9 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
                 ),
                 const SizedBox(height: 16),
 
+                // Subtext - consistent for all demo end paths
                 Text(
-                  isGuest
-                      ? 'Your interactive demo session has expired. Choose a plan to continue using Cloudora.'
-                      : 'We hope you enjoyed Cloudora. Upgrade to a paid plan to keep managing your inventory without interruption.',
+                  'Your interactive demo session has expired. Choose a plan to continue using Cloudora.',
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     color: const Color(0xFF666666),
@@ -144,6 +137,7 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
                 ),
                 const SizedBox(height: 48),
 
+                // Primary CTA: "View Plans & Upgrade"
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -181,7 +175,7 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // Feedback button (non-blocking)
+                // Feedback button (non-blocking, optional action)
                 TextButton(
                   onPressed: _openFeedbackForm,
                   child: Text(
@@ -194,7 +188,7 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // Back to Home
+                // "Back to Home" button
                 TextButton(
                   onPressed: _handleBackToHome,
                   child: Text(
@@ -213,3 +207,4 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
     );
   }
 }
+

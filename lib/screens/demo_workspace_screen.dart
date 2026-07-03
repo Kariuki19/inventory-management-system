@@ -41,12 +41,14 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   }
 
   void _redirectToExpired(demo_service.DemoEndedReason reason) {
+    /// Double-trigger protection: If timer expires at exact same moment as manual exit,
+    /// this guard ensures only ONE redirect happens, preventing navigation stack issues.
     if (_expiredHandled) return;
     _expiredHandled = true;
 
     InventoryService.isDemoMode = false;
 
-    // Show brief toast before navigation
+    // Show brief toast before navigation to make the transition less abrupt
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('Your demo session has expired'),
@@ -62,7 +64,6 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (_) => DemoExpiredScreen(
-                reason: DemoExpiryReason.guestSession,
                 demoEndReason: reason,
               ),
             ),
@@ -88,8 +89,8 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Exit Demo Mode?'),
-          content: const Text('You can restart the demo anytime from the home screen.'),
+          title: const Text('Exit demo mode?'),
+          content: const Text('You can restart anytime.'),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -123,6 +124,7 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     _expiredHandled = true;
 
     InventoryService.isDemoMode = false;
+    _analytics.logDemoExitClicked();
     await demo_service.DemoService.clearSession(
       reason: demo_service.DemoEndedReason.manualExit,
     );

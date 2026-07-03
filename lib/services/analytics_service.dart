@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 /// These events track demo mode lifecycle and user interactions
 enum DemoAnalyticsEvent {
   demoStarted,
+  demoExitClicked,
   demoEndedScreenViewed,
   feedbackFormOpened,
   viewPlansClicked,
@@ -55,6 +56,11 @@ class AnalyticsService {
   /// Log demo session started
   void logDemoStarted() {
     logDemoEvent(DemoAnalyticsEvent.demoStarted);
+  }
+
+  /// Log user clicked exit demo button
+  void logDemoExitClicked() {
+    logDemoEvent(DemoAnalyticsEvent.demoExitClicked);
   }
 
   /// Log demo ended screen viewed

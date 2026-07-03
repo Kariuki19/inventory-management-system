@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../services/demo_service.dart';
 
+// Re-export DemoEndedReason from demo_service for convenience
+export '../services/demo_service.dart' show DemoEndedReason;
+
 /// Manages the demo mode session state and expiration logic
 class DemoProvider extends ChangeNotifier {
   Timer? _tickTimer;
@@ -93,7 +96,13 @@ class DemoProvider extends ChangeNotifier {
   }
 
   /// Handle network loss during demo - still navigate but retry session cleanup
-  Future<void> handleNetworkLoss() async {
+  /// 
+  /// Edge case: Network loss during demo session expiration
+  /// - User can't reach backend to validate/confirm session closure
+  /// - Solution: Route user to Demo Ended screen locally (don't block on network)
+  /// - Background: Retry session cleanup with timeout
+  /// - Result: User experience not disrupted by network failures
+  void handleNetworkLoss() async {
     // Attempt local cleanup but don't block navigation
     try {
       if (_sessionActive) {
@@ -104,11 +113,11 @@ class DemoProvider extends ChangeNotifier {
         await DemoService.clearSession(reason: DemoEndedReason.timeExpired)
             .timeout(const Duration(seconds: 2))
             .catchError((_) {
-          // Silently fail if network is down
+          // Silently fail if network is down - user is already on Demo Ended screen
         });
       }
     } catch (_) {
-      // Continue anyway
+      // Continue anyway - UI not blocked by network errors
     }
     notifyListeners();
   }

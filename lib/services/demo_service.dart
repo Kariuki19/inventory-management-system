@@ -1,15 +1,27 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum DemoEndedReason { timeExpired, manualExit }
+/// Enum for tracking why a demo session ended
+/// Used for analytics and user experience differentiation
+enum DemoEndedReason { 
+  /// Demo session timer expired automatically
+  timeExpired,
+  /// User manually exited demo
+  manualExit,
+}
 
 class DemoService {
   static const String _sessionStartKey = 'demo_session_start';
   static const String _sessionTokenKey = 'demo_session_token';
   static const String _sessionEndedReasonKey = 'demo_session_ended_reason';
 
+  /// Demo duration for guest/anonymous users - Backend should enforce server-side
   static const Duration guestDemoDuration = Duration(minutes: 5);
 
   /// Generate a unique session token for server-side validation
+  /// 
+  /// In production, the backend should validate this token to prevent tampering
+  /// (e.g., client-side timer manipulation). The token allows the backend to
+  /// correlate this session with server logs and enforce the true expiration.
   static String _generateSessionToken() {
     return DateTime.now().millisecondsSinceEpoch.toString();
   }
@@ -45,6 +57,14 @@ class DemoService {
   }
 
   /// Validate session is still active (backend would verify this server-side)
+  /// 
+  /// This method checks both local state and session token validity.
+  /// In production, this should make an API call to the backend to:
+  /// - Verify the session token is valid (tamper protection)
+  /// - Validate the session hasn't expired server-side
+  /// - Prevent replay attacks with stale tokens
+  /// 
+  /// Current implementation: Local validation only (ready for backend integration)
   static Future<bool> validateSession() async {
     // In production, this would make an API call to verify the session server-side
     // For now, we check locally and flag for backend validation
