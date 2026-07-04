@@ -155,7 +155,6 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
             getRemainingTime: demo_service.DemoService.getRemainingTime,
             onExpired: _handleDemoExpired,
             message: 'Free demo — data is not saved',
-            onExit: _showExitConfirmation,
           ),
           const Expanded(
             child: ClipRect(

@@ -4,7 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../utils/consultation_utils.dart';
 import '../services/analytics_service.dart';
 import '../services/demo_service.dart';
-import 'auth/login_register_page.dart';
 import 'landing_screen.dart';
 import 'upgrade_plan_screen.dart';
 
@@ -45,18 +44,40 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
     _analytics.logFeedbackFormOpened(reason);
 
     const feedbackFormUrl =
-        'https://docs.google.com/forms/d/e/1FAIpQLScdS8WHJ_WW-vAoVjOUTQrJcog4kQo6MZhb3MqC9fOCq3la7g/viewform?usp=header'; 
-
+        'https://docs.google.com/forms/d/e/1FAIpQLScdS8WHJ_WW-vAoVjOUTQrJcog4kQo6MZhb3MqC9fOCq3la7g/viewform?usp=header';
 
     try {
-      if (await canLaunchUrl(Uri.parse(feedbackFormUrl))) {
+      final uri = Uri.parse(feedbackFormUrl);
+      // Check if URL can be launched
+      if (await canLaunchUrl(uri)) {
         await launchUrl(
-          Uri.parse(feedbackFormUrl),
+          uri,
           mode: LaunchMode.externalApplication,
         );
+      } else {
+        // URL cannot be launched - show error to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open feedback form. Please try again.'),
+              duration: Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error opening feedback form: $e');
+      // Show error message to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error opening feedback form'),
+            duration: Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
