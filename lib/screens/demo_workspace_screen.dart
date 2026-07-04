@@ -3,6 +3,7 @@ import '../services/inventory_service.dart';
 import '../services/demo_service.dart' as demo_service;
 import '../services/analytics_service.dart';
 import '../widgets/demo_countdown_banner.dart';
+import 'demo_exited_screen.dart';
 import 'demo_expired_screen.dart';
 import 'home_page.dart';
 
@@ -73,6 +74,22 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     }
   }
 
+  void _redirectToExited() {
+    /// Single guard, set here — same pattern as _redirectToExpired().
+    /// This must be the ONLY place that flips _expiredHandled for the exit path,
+    /// so callers (like _exitDemo) should not set it themselves beforehand.
+    if (_expiredHandled) return;
+    _expiredHandled = true;
+
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const DemoExitedScreen(),
+        ),
+      );
+    }
+  }
+
   Future<void> _handleDemoExpired() async {
     if (_expiredHandled || _isExiting) return;
 
@@ -121,16 +138,16 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     if (_isExiting || _expiredHandled) return;
 
     _isExiting = true;
-    _expiredHandled = true;
+    // NOTE: _expiredHandled is intentionally NOT set here.
+    // _redirectToExited() is the single source of truth for that guard —
+    // setting it here caused _redirectToExited()'s own check to bail out
+    // immediately, silently skipping the navigation to DemoExitedScreen.
 
     InventoryService.isDemoMode = false;
     _analytics.logDemoExitClicked();
-    await demo_service.DemoService.clearSession(
-      reason: demo_service.DemoEndedReason.manualExit,
-    );
 
     if (mounted) {
-      _redirectToExpired(demo_service.DemoEndedReason.manualExit);
+      _redirectToExited();
     }
   }
 
@@ -149,19 +166,22 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     }
 
     return Scaffold(
-      body: Column(
-        children: [
-          DemoCountdownBanner(
-            getRemainingTime: demo_service.DemoService.getRemainingTime,
-            onExpired: _handleDemoExpired,
-            message: 'Free demo — data is not saved',
-          ),
-          const Expanded(
-            child: ClipRect(
-              child: HomePage(),
+      body: SafeArea(
+        child: Column(
+          children: [
+            DemoCountdownBanner(
+              getRemainingTime: demo_service.DemoService.getRemainingTime,
+              onExpired: _handleDemoExpired,
+              onExit: _showExitConfirmation,
+              message: 'Free demo - data is not saved',
             ),
-          ),
-        ],
+            const Expanded(
+              child: ClipRect(
+                child: HomePage(),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

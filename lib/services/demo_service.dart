@@ -13,6 +13,9 @@ class DemoService {
   static const String _sessionStartKey = 'demo_session_start';
   static const String _sessionTokenKey = 'demo_session_token';
   static const String _sessionEndedReasonKey = 'demo_session_ended_reason';
+  static const String _sessionPausedKey = 'demo_session_paused';
+  static const String _sessionPausedRemainingKey =
+      'demo_session_paused_remaining';
 
   /// Demo duration for guest/anonymous users - Backend should enforce server-side
   static const Duration guestDemoDuration = Duration(minutes: 5);
@@ -29,6 +32,11 @@ class DemoService {
   static Future<void> startSession() async {
     final prefs = await SharedPreferences.getInstance();
     final existing = prefs.getString(_sessionStartKey);
+    final isPaused = prefs.getBool(_sessionPausedKey) ?? false;
+
+    if (isPaused) {
+      return;
+    }
 
     if (existing != null) {
       final start = DateTime.parse(existing);
@@ -41,6 +49,8 @@ class DemoService {
     await prefs.setString(_sessionStartKey, DateTime.now().toIso8601String());
     await prefs.setString(_sessionTokenKey, _generateSessionToken());
     await prefs.remove(_sessionEndedReasonKey);
+    await prefs.remove(_sessionPausedKey);
+    await prefs.remove(_sessionPausedRemainingKey);
   }
 
   static Future<DateTime?> getSessionStart() async {
@@ -76,6 +86,15 @@ class DemoService {
   }
 
   static Future<DateTime> getExpiryTime() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isPaused = prefs.getBool(_sessionPausedKey) ?? false;
+
+    if (isPaused) {
+      final pausedRemaining = prefs.getInt(_sessionPausedRemainingKey);
+      final remaining = Duration(milliseconds: pausedRemaining ?? 0);
+      return DateTime.now().add(remaining);
+    }
+
     final start = await getSessionStart();
     return (start ?? DateTime.now()).add(guestDemoDuration);
   }
@@ -92,9 +111,54 @@ class DemoService {
   }
 
   static Future<bool> hasActiveSession() async {
-    final start = await getSessionStart();
-    if (start == null) return false;
-    return DateTime.now().difference(start) < guestDemoDuration;
+    final token = await getSessionToken();
+    if (token == null) return false;
+
+    final remaining = await getRemainingTime();
+    return remaining > Duration.zero;
+  }
+
+  /// Pause the current session without clearing the remaining time.
+  /// Returns false when there is no resumable session to pause.
+  static Future<bool> pauseSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(_sessionTokenKey);
+    if (token == null) return false;
+
+    final remaining = await getRemainingTime();
+    if (remaining <= Duration.zero) {
+      return false;
+    }
+
+    await prefs.setBool(_sessionPausedKey, true);
+    await prefs.setInt(_sessionPausedRemainingKey, remaining.inMilliseconds);
+    return true;
+  }
+
+  /// Resume a paused session without resetting elapsed or remaining time.
+  /// Returns false when the session cannot be resumed.
+  static Future<bool> resumeSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isPaused = prefs.getBool(_sessionPausedKey) ?? false;
+    if (!isPaused) {
+      return await hasActiveSession();
+    }
+
+    final token = prefs.getString(_sessionTokenKey);
+    final pausedRemaining = prefs.getInt(_sessionPausedRemainingKey);
+    if (token == null || pausedRemaining == null || pausedRemaining <= 0) {
+      return false;
+    }
+
+    final remaining = Duration(milliseconds: pausedRemaining);
+    final adjustedStart = DateTime.now().subtract(
+      guestDemoDuration - remaining,
+    );
+
+    await prefs.setString(_sessionStartKey, adjustedStart.toIso8601String());
+    await prefs.remove(_sessionPausedKey);
+    await prefs.remove(_sessionPausedRemainingKey);
+    return true;
   }
 
   /// Clear session with optional reason for tracking
@@ -104,6 +168,8 @@ class DemoService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_sessionStartKey);
     await prefs.remove(_sessionTokenKey);
+    await prefs.remove(_sessionPausedKey);
+    await prefs.remove(_sessionPausedRemainingKey);
     // Store reason for analytics before clearing
     await prefs.setString(_sessionEndedReasonKey, reason.toString());
   }
