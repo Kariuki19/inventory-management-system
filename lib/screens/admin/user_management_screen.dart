@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../models/user_model.dart';
-import '../../services/auth_service.dart';
+import 'package:inventory_management_system/features/auth/models/user_model.dart';
+import 'package:inventory_management_system/features/auth/services/auth_service.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});

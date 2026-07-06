@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../utils/consultation_utils.dart';
-import 'auth/login_register_page.dart';
-import 'landing_screen.dart';
+import '../core/utils/consultation_utils.dart';
+import '../features/auth/screens/login_register_page.dart';
+import '../features/onboarding/screens/landing_screen.dart';
 
 class UpgradePlanScreen extends StatelessWidget {
   final String title;

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:inventory_management_system/providers/theme_provider.dart';
-import 'package:inventory_management_system/models/inventory_item.dart';
+import 'package:inventory_management_system/core/providers/theme_provider.dart';
+import 'package:inventory_management_system/features/inventory/models/inventory_item.dart';
 
 void main() {
   group('Theme Provider Tests', () {

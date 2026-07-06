@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../utils/consultation_utils.dart';
-import '../services/analytics_service.dart';
-import '../services/demo_service.dart';
-import 'landing_screen.dart';
+import '../core/utils/consultation_utils.dart';
+import '../features/inventory/services/analytics_service.dart';
+import '../features/inventory/services/demo_service.dart';
+import '../features/onboarding/screens/landing_screen.dart';
 import 'upgrade_plan_screen.dart';
 
 class DemoExpiredScreen extends StatefulWidget {
