@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/demo_countdown_banner.dart';
+import '../../../screens/demo_expired_screen.dart';
+import '../../../screens/demo_exited_screen.dart';
 import '../../inventory/services/inventory_service.dart';
+import '../../inventory/services/demo_service.dart';
+import '../../inventory/services/analytics_service.dart';
 import '../../inventory/screens/inventory_list_screen.dart';
 import '../../stock/screens/stock_movements_screen.dart';
 import '../widgets/demo_sidebar.dart';
@@ -21,6 +26,8 @@ class DemoWorkspaceScreen extends StatefulWidget {
 class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   int _selectedIndex = 0;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _expiredHandled = false;
+  final AnalyticsService _analytics = AnalyticsService();
 
   final _pages = const [
     DemoOverviewScreen(),
@@ -34,6 +41,14 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   void initState() {
     super.initState();
     InventoryService.isDemoMode = true;
+    _analytics.logDemoStarted();
+    
+    // Ensure the session is initialized when workspace is opened
+    _initDemoSession();
+  }
+
+  Future<void> _initDemoSession() async {
+    await DemoService.startSession();
   }
 
   @override
@@ -42,8 +57,79 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     super.dispose();
   }
 
-  void _exitDemo() {
-    Navigator.of(context).pop();
+  void _handleDemoExpired() async {
+    await DemoService.clearSession(reason: DemoEndedReason.timeExpired);
+    if (mounted) {
+      _redirectToExpired(DemoEndedReason.timeExpired);
+    }
+  }
+
+  void _redirectToExpired(DemoEndedReason reason) {
+    if (_expiredHandled) return;
+    _expiredHandled = true;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Your demo session has expired'),
+        duration: Duration(milliseconds: 1500),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => DemoExpiredScreen(demoEndReason: reason),
+          ),
+        );
+      }
+    });
+  }
+
+  void _showExitConfirmation() {
+    _analytics.logDemoExitClicked();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Exit demo mode?'),
+          content: const Text('You can restart anytime.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _exitDemo();
+              },
+              child: const Text('Exit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _exitDemo() async {
+    _analytics.logDemoExitConfirmed();
+    await DemoService.pauseSession();
+    if (mounted) {
+      _redirectToExited();
+    }
+  }
+
+  void _redirectToExited() {
+    if (_expiredHandled) return;
+    _expiredHandled = true;
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => const DemoExitedScreen(),
+      ),
+    );
   }
 
   @override
@@ -62,11 +148,17 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
                 DemoSidebar(
                   selectedIndex: _selectedIndex,
                   onSelect: (index) => setState(() => _selectedIndex = index),
-                  onExitDemo: _exitDemo,
+                  onExitDemo: _showExitConfirmation,
                 ),
                 Expanded(
                   child: Column(
                     children: [
+                      DemoCountdownBanner(
+                        getRemainingTime: DemoService.getRemainingTime,
+                        onExpired: _handleDemoExpired,
+                        onExit: _showExitConfirmation,
+                        message: 'Demo Mode Active',
+                      ),
                       DemoTopBar(title: demoNavItems[_selectedIndex].label),
                       Expanded(
                         child: IndexedStack(index: _selectedIndex, children: _pages),
@@ -86,7 +178,7 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
             child: DemoSidebar(
               selectedIndex: _selectedIndex,
               onSelect: (index) => setState(() => _selectedIndex = index),
-              onExitDemo: _exitDemo,
+              onExitDemo: _showExitConfirmation,
               onNavigate: () => Navigator.of(context).pop(),
             ),
           ),
@@ -94,7 +186,19 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
             title: demoNavItems[_selectedIndex].label,
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
           ),
-          body: IndexedStack(index: _selectedIndex, children: _pages),
+          body: Column(
+            children: [
+              DemoCountdownBanner(
+                getRemainingTime: DemoService.getRemainingTime,
+                onExpired: _handleDemoExpired,
+                onExit: _showExitConfirmation,
+                message: 'Demo Mode Active',
+              ),
+              Expanded(
+                child: IndexedStack(index: _selectedIndex, children: _pages),
+              ),
+            ],
+          ),
         );
       },
     );

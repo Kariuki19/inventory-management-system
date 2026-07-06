@@ -11,8 +11,6 @@ import 'features/onboarding/screens/splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Initialize services
   await AuthService.init();
   await OfflineService.initialize();
   await NotificationService.initialize();
@@ -37,7 +35,7 @@ class MyApp extends StatelessWidget {
             themeMode:
                 themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: const SplashScreen(),
-          );
+          git);
         },
       ),
     );

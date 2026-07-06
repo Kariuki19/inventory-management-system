@@ -1,66 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
-
+import '../core/config/demo_constants.dart';
 import '../features/inventory/services/analytics_service.dart';
 import '../features/inventory/services/demo_service.dart';
 import '../core/utils/consultation_utils.dart';
 import '../features/demo/screens/demo_workspace_screen.dart';
 import '../features/onboarding/screens/landing_screen.dart';
 import 'upgrade_plan_screen.dart';
+import 'demo_expired_screen.dart';
 
-class DemoExitedScreen extends StatelessWidget {
-  final DemoEndedReason? demoEndReason;
+class DemoExitedScreen extends StatefulWidget {
+  final DemoEndedReason demoEndReason;
 
   const DemoExitedScreen({
     super.key,
     this.demoEndReason = DemoEndedReason.manualExit,
   });
 
+  @override
+  State<DemoExitedScreen> createState() => _DemoExitedScreenState();
+}
+
+class _DemoExitedScreenState extends State<DemoExitedScreen> {
+  final AnalyticsService _analytics = AnalyticsService();
   static const Color _blue = Color(0xFF3B82F6);
 
-  String _reasonString() {
-    return demoEndReason?.toString().split('.').last ?? 'manualExit';
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _analytics.logDemoEndedScreenViewed('manualExit');
+    });
   }
 
   String _formatRemainingTime(Duration duration) {
     if (duration <= Duration.zero) {
-      return 'Less than 1 minute';
+      return '0 minutes';
     }
 
-    final days = duration.inDays;
-    final hours = duration.inHours % 24;
+    final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
 
-    final parts = <String>[];
-
-    if (days > 0) {
-      parts.add('$days day${days == 1 ? '' : 's'}');
-      if (hours > 0) {
-        parts.add('$hours hour${hours == 1 ? '' : 's'}');
-      }
-    } else if (hours > 0) {
-      parts.add('$hours hour${hours == 1 ? '' : 's'}');
-      if (minutes > 0) {
-        parts.add('$minutes minute${minutes == 1 ? '' : 's'}');
-      }
+    if (hours > 0) {
+      return '$hours hour${hours == 1 ? '' : 's'} $minutes minute${minutes == 1 ? '' : 's'}';
     } else {
-      if (minutes > 0) {
-        parts.add('$minutes minute${minutes == 1 ? '' : 's'}');
-      } else {
-        parts.add('Less than 1 minute');
-      }
+      return '$minutes minute${minutes == 1 ? '' : 's'}';
     }
-
-    return parts.join(' ');
   }
 
-  Future<void> _openFeedbackForm(BuildContext context) async {
-    final reason = _reasonString();
-    AnalyticsService().logFeedbackFormOpened(reason);
+  Future<void> _openFeedbackForm() async {
+    _analytics.logFeedbackFormOpened('manualExit');
 
-    const feedbackFormUrl =
-        'https://docs.google.com/forms/d/e/1FAIpQLScdS8WHJ_WW-vAoVjOUTQrJcog4kQo6MZhb3MqC9fOCq3la7g/viewform?usp=header';
+    const feedbackFormUrl = DemoConstants.feedbackFormUrl;
 
     try {
       final uri = Uri.parse(feedbackFormUrl);
@@ -69,18 +61,20 @@ class DemoExitedScreen extends StatelessWidget {
           uri,
           mode: LaunchMode.externalApplication,
         );
-      } else if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not open feedback form. Please try again.'),
-            duration: Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open feedback form. Please try again.'),
+              duration: Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error opening feedback form: $e');
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Error opening feedback form'),
@@ -92,8 +86,8 @@ class DemoExitedScreen extends StatelessWidget {
     }
   }
 
-  void _handleViewPlans(BuildContext context) {
-    AnalyticsService().logViewPlansClicked();
+  void _handleViewPlans() {
+    _analytics.logViewPlansClicked();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => const UpgradePlanScreen(
@@ -104,22 +98,36 @@ class DemoExitedScreen extends StatelessWidget {
     );
   }
 
-  void _handleTalkToSales(BuildContext context) {
-    AnalyticsService().logTalkToSalesClicked();
+  void _handleTalkToSales() {
+    _analytics.logTalkToSalesClicked();
     ConsultationUtils.showConsultationDialog(context);
   }
 
-  void _handleBackToHome(BuildContext context) {
-    AnalyticsService().logBackToHomeClicked();
+  void _handleBackToHome() {
+    _analytics.logBackToHomeClicked();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LandingScreen()),
       (_) => false,
     );
   }
 
-  Future<void> _resumeDemo(BuildContext context) async {
+  Future<void> _resumeDemo() async {
+    final isExpired = await DemoService.isSessionExpired();
+    if (isExpired) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const DemoExpiredScreen(
+            demoEndReason: DemoEndedReason.timeExpired,
+          ),
+        ),
+      );
+      return;
+    }
+
+    _analytics.logDemoResumed();
     final resumed = await DemoService.resumeSession();
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     if (!resumed) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -150,10 +158,10 @@ class DemoExitedScreen extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: const Color(0xFFFF6B00).withValues(alpha: 0.08),
+            color: _blue.withOpacity(0.08),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: const Color(0xFFFF6B00).withValues(alpha: 0.16),
+              color: _blue.withOpacity(0.16),
             ),
           ),
           child: Text(
@@ -182,20 +190,23 @@ class DemoExitedScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Icon: exit/door arrow, blue, in soft blue circle (130x130, ~12% opacity fill)
                 Container(
                   width: 130,
                   height: 130,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B00).withValues(alpha: 0.12),
+                    color: _blue.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.logout,
                     size: 64,
-                    color: Color(0xFFFF6B00),
+                    color: _blue,
                   ),
                 ),
                 const SizedBox(height: 32),
+
+                // Headline
                 Text(
                   "You've Exited the Demo",
                   style: GoogleFonts.poppins(
@@ -206,6 +217,8 @@ class DemoExitedScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
+
+                // Body
                 Text(
                   'You left your demo session early. Your remaining time is saved — pick up right where you left off, or explore a plan to unlock full access.',
                   style: GoogleFonts.poppins(
@@ -216,15 +229,19 @@ class DemoExitedScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
+
+                // Time Remaining Badge
                 _buildTimeBadge(context),
                 const SizedBox(height: 48),
+
+                // Primary CTA: "Resume Demo" (filled blue, height 54px, radius 14px)
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: () => _resumeDemo(context),
+                    onPressed: _resumeDemo,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF6B00),
+                      backgroundColor: _blue,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -241,14 +258,16 @@ class DemoExitedScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // Secondary CTA: "View Plans & Upgrade" (outlined blue, height 54px, radius 14px, 1.5 side)
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: OutlinedButton(
-                    onPressed: () => _handleViewPlans(context),
+                    onPressed: _handleViewPlans,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFFF6B00),
-                      side: const BorderSide(color: Color(0xFFFF6B00), width: 1.5),
+                      foregroundColor: _blue,
+                      side: const BorderSide(color: _blue, width: 1.5),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -263,8 +282,10 @@ class DemoExitedScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // Talk to Sales Link
                 TextButton(
-                  onPressed: () => _handleTalkToSales(context),
+                  onPressed: _handleTalkToSales,
                   child: Text(
                     'Talk to Sales',
                     style: GoogleFonts.poppins(
@@ -274,19 +295,28 @@ class DemoExitedScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () => _openFeedbackForm(context),
-                  child: Text(
+
+                // Feedback button (non-blocking, optional action, grey with small icon)
+                TextButton.icon(
+                  onPressed: _openFeedbackForm,
+                  icon: const Icon(
+                    Icons.feedback_outlined,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                  label: Text(
                     'Send Feedback',
                     style: GoogleFonts.poppins(
-                      color: const Color(0xFF666666),
+                      color: Colors.grey,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
+
+                // Back to Home Link (light grey)
                 TextButton(
-                  onPressed: () => _handleBackToHome(context),
+                  onPressed: _handleBackToHome,
                   child: Text(
                     'Back to Home',
                     style: GoogleFonts.poppins(

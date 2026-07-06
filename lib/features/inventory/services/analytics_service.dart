@@ -3,13 +3,15 @@ import 'package:flutter/foundation.dart';
 /// Demo/Analytics tracking events
 /// These events track demo mode lifecycle and user interactions
 enum DemoAnalyticsEvent {
-  demoStarted,
-  demoExitClicked,
-  demoEndedScreenViewed,
-  feedbackFormOpened,
-  viewPlansClicked,
-  talkToSalesClicked,
-  backToHomeClicked,
+  demo_started,
+  demo_exit_clicked,
+  demo_exit_confirmed,
+  demo_ended_screen_viewed,
+  feedback_form_opened,
+  demo_resumed,
+  view_plans_clicked,
+  talk_to_sales_clicked,
+  back_to_home_clicked,
 }
 
 /// Analytics service for tracking demo mode and other events
@@ -55,18 +57,23 @@ class AnalyticsService {
 
   /// Log demo session started
   void logDemoStarted() {
-    logDemoEvent(DemoAnalyticsEvent.demoStarted);
+    logDemoEvent(DemoAnalyticsEvent.demo_started);
   }
 
   /// Log user clicked exit demo button
   void logDemoExitClicked() {
-    logDemoEvent(DemoAnalyticsEvent.demoExitClicked);
+    logDemoEvent(DemoAnalyticsEvent.demo_exit_clicked);
+  }
+
+  /// Log user confirmed exit
+  void logDemoExitConfirmed() {
+    logDemoEvent(DemoAnalyticsEvent.demo_exit_confirmed);
   }
 
   /// Log demo ended screen viewed
   void logDemoEndedScreenViewed(String reason) {
     logDemoEvent(
-      DemoAnalyticsEvent.demoEndedScreenViewed,
+      DemoAnalyticsEvent.demo_ended_screen_viewed,
       reason: reason,
     );
   }
@@ -74,23 +81,28 @@ class AnalyticsService {
   /// Log feedback form opened
   void logFeedbackFormOpened(String reason) {
     logDemoEvent(
-      DemoAnalyticsEvent.feedbackFormOpened,
+      DemoAnalyticsEvent.feedback_form_opened,
       reason: reason,
     );
   }
 
+  /// Log demo resumed
+  void logDemoResumed() {
+    logDemoEvent(DemoAnalyticsEvent.demo_resumed);
+  }
+
   /// Log user clicked "View Plans & Upgrade"
   void logViewPlansClicked() {
-    logDemoEvent(DemoAnalyticsEvent.viewPlansClicked);
+    logDemoEvent(DemoAnalyticsEvent.view_plans_clicked);
   }
 
   /// Log user clicked "Talk to Sales"
   void logTalkToSalesClicked() {
-    logDemoEvent(DemoAnalyticsEvent.talkToSalesClicked);
+    logDemoEvent(DemoAnalyticsEvent.talk_to_sales_clicked);
   }
 
   /// Log user clicked "Back to Home"
   void logBackToHomeClicked() {
-    logDemoEvent(DemoAnalyticsEvent.backToHomeClicked);
+    logDemoEvent(DemoAnalyticsEvent.back_to_home_clicked);
   }
 }

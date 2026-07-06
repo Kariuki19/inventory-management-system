@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../core/config/demo_constants.dart';
 import '../core/utils/consultation_utils.dart';
 import '../features/inventory/services/analytics_service.dart';
 import '../features/inventory/services/demo_service.dart';
@@ -8,13 +9,13 @@ import '../features/onboarding/screens/landing_screen.dart';
 import 'upgrade_plan_screen.dart';
 
 class DemoExpiredScreen extends StatefulWidget {
-  /// Optional parameter indicating why the demo ended
-  /// Used only for analytics/logging, not for UI changes
-  final DemoEndedReason? demoEndReason;
+  /// Named parameter indicating why the demo ended
+  /// Used only for analytics/logging context per spec
+  final DemoEndedReason demoEndReason;
 
   const DemoExpiredScreen({
     super.key,
-    this.demoEndReason = DemoEndedReason.timeExpired,
+    required this.demoEndReason,
   });
 
   @override
@@ -33,29 +34,24 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
   }
 
   void _logDemoEndedScreenViewed() {
-    final reason =
-        widget.demoEndReason?.toString().split('.').last ?? 'unknown';
+    final reason = widget.demoEndReason.toString().split('.').last;
     _analytics.logDemoEndedScreenViewed(reason);
   }
 
   Future<void> _openFeedbackForm() async {
-    final reason =
-        widget.demoEndReason?.toString().split('.').last ?? 'unknown';
+    final reason = widget.demoEndReason.toString().split('.').last;
     _analytics.logFeedbackFormOpened(reason);
 
-    const feedbackFormUrl =
-        'https://docs.google.com/forms/d/e/1FAIpQLScdS8WHJ_WW-vAoVjOUTQrJcog4kQo6MZhb3MqC9fOCq3la7g/viewform?usp=header';
+    const feedbackFormUrl = DemoConstants.feedbackFormUrl;
 
     try {
       final uri = Uri.parse(feedbackFormUrl);
-      // Check if URL can be launched
       if (await canLaunchUrl(uri)) {
         await launchUrl(
           uri,
           mode: LaunchMode.externalApplication,
         );
       } else {
-        // URL cannot be launched - show error to user
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -68,7 +64,6 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
       }
     } catch (e) {
       debugPrint('Error opening feedback form: $e');
-      // Show error message to user
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -118,23 +113,23 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Timer icon in soft orange circle
+                // Timer icon in soft orange circle (130x130, ~12% opacity fill)
                 Container(
-                  width: 120,
-                  height: 120,
+                  width: 130,
+                  height: 130,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF6B00).withValues(alpha: 0.1),
+                    color: const Color(0xFFF97316).withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.timer_off_outlined,
                     size: 64,
-                    color: Color(0xFFFF6B00),
+                    color: Color(0xFFF97316),
                   ),
                 ),
                 const SizedBox(height: 32),
 
-                // Headline - consistent for all demo end paths
+                // Headline
                 Text(
                   'Your Demo Has Ended',
                   style: GoogleFonts.poppins(
@@ -146,7 +141,7 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Subtext - consistent for all demo end paths
+                // Body
                 Text(
                   'Your interactive demo session has expired. Choose a plan to continue using Cloudora.',
                   style: GoogleFonts.poppins(
@@ -158,17 +153,17 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
                 ),
                 const SizedBox(height: 48),
 
-                // Primary CTA: "View Plans & Upgrade"
+                // Primary CTA: "View Plans & Upgrade" (filled orange, 54px height, 14px radius)
                 SizedBox(
                   width: double.infinity,
+                  height: 54,
                   child: ElevatedButton(
                     onPressed: _handleViewPlans,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF6B00),
+                      backgroundColor: const Color(0xFFF97316),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 20),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       elevation: 0,
                     ),
@@ -196,20 +191,25 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
                 ),
                 const SizedBox(height: 8),
 
-                // Feedback button (non-blocking, optional action)
-                TextButton(
+                // Feedback button (non-blocking, optional action, grey with small icon)
+                TextButton.icon(
                   onPressed: _openFeedbackForm,
-                  child: Text(
+                  icon: const Icon(
+                    Icons.feedback_outlined,
+                    size: 16,
+                    color: Colors.grey,
+                  ),
+                  label: Text(
                     'Send Feedback',
                     style: GoogleFonts.poppins(
-                      color: const Color(0xFF666666),
+                      color: Colors.grey,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
 
-                // "Back to Home" button
+                // "Back to Home" button (light grey)
                 TextButton(
                   onPressed: _handleBackToHome,
                   child: Text(
@@ -228,4 +228,3 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
     );
   }
 }
-
