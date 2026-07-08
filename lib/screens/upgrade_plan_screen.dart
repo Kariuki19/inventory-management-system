@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/utils/consultation_utils.dart';
-import '../features/auth/screens/login_register_page.dart';
 import '../features/onboarding/screens/landing_screen.dart';
 
 class UpgradePlanScreen extends StatelessWidget {
@@ -36,7 +35,9 @@ class UpgradePlanScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -88,26 +89,6 @@ class UpgradePlanScreen extends StatelessWidget {
               onSelect: () => ConsultationUtils.showConsultationDialog(context, plan: 'Premium'),
             ),
             const SizedBox(height: 32),
-            OutlinedButton(
-              onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => const LoginPage(startWithRegister: true),
-                  ),
-                );
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFFF6B00),
-                side: const BorderSide(color: Color(0xFFFF6B00)),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text(
-                'Start 14-Day Free Trial',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-            ),
-            const SizedBox(height: 12),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pushAndRemoveUntil(
@@ -124,6 +105,7 @@ class UpgradePlanScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

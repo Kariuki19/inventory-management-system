@@ -163,45 +163,7 @@ class _LandingScreenState extends State<LandingScreen>
                 _buildNavLink(
                     'About', isDarkMode, () => _scrollToSection(_aboutKey)),
               ],
-              Padding(
-                padding: const EdgeInsets.only(right: 16, left: 8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: OutlinedButton(
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (context) => const WidgetTree()),
-                      );
-                    },
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: isDarkMode 
-                          ? Colors.black.withOpacity(0.5) 
-                          : Colors.white.withOpacity(0.5),
-                      foregroundColor: isDarkMode ? Colors.white : theme.primaryColor,
-                      side: BorderSide(
-                          color: isDarkMode ? Colors.white54 : theme.primaryColor),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)),
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    ),
-                    child: Text(
-                      'Login',
-                      style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600, fontSize: 13),
-                    ),
-                  ),
-                ),
-              ),
+
             ],
           ),
           
@@ -1881,57 +1843,7 @@ class _LandingScreenState extends State<LandingScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            // Skip Button for returning users
-            AnimationConfiguration.staggeredList(
-              position: 1,
-              duration: const Duration(milliseconds: 800),
-              child: SlideAnimation(
-                verticalOffset: 30.0,
-                child: FadeInAnimation(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pushReplacement(
-                        PageRouteBuilder(
-                          pageBuilder:
-                              (context, animation, secondaryAnimation) =>
-                                  const WidgetTree(),
-                          transitionsBuilder:
-                              (context, animation, secondaryAnimation, child) {
-                            const begin = Offset(0.0, 0.3);
-                            const end = Offset.zero;
-                            const curve = Curves.easeOut;
 
-                            var tween = Tween(begin: begin, end: end)
-                                .chain(CurveTween(curve: curve));
-                            var slideAnimation = animation.drive(tween);
-
-                            return SlideTransition(
-                              position: slideAnimation,
-                              child: child,
-                            );
-                          },
-                          transitionDuration: const Duration(milliseconds: 400),
-                        ),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 24),
-                      foregroundColor:
-                          isDarkMode ? Colors.white70 : Colors.grey[600],
-                    ),
-                    child: Text(
-                      'Skip - Already have an account',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),

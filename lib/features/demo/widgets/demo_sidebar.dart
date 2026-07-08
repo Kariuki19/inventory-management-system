@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/screens/widget_tree.dart';
+import '../../inventory/services/demo_service.dart';
 
 class DemoNavItem {
   final IconData icon;
@@ -21,7 +24,7 @@ const List<DemoNavItem> demoNavItems = [
 /// bordered sidebar pattern in the design references (no gradients/heavy
 /// shadows). Reused for both the permanent desktop rail and the mobile
 /// Drawer — pass [onNavigate] to close the drawer after a tap on mobile.
-class DemoSidebar extends StatelessWidget {
+class DemoSidebar extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onSelect;
   final VoidCallback onExitDemo;
@@ -34,6 +37,38 @@ class DemoSidebar extends StatelessWidget {
     required this.onExitDemo,
     this.onNavigate,
   });
+
+  @override
+  State<DemoSidebar> createState() => _DemoSidebarState();
+}
+
+class _DemoSidebarState extends State<DemoSidebar> {
+  Timer? _timer;
+  Duration _remaining = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateRemaining();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _updateRemaining();
+    });
+  }
+
+  Future<void> _updateRemaining() async {
+    final remaining = await DemoService.getRemainingTime();
+    if (mounted) {
+      setState(() {
+        _remaining = remaining;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +130,7 @@ class DemoSidebar extends StatelessWidget {
           ),
           ...List.generate(demoNavItems.length, (index) {
             final item = demoNavItems[index];
-            final selected = index == selectedIndex;
+            final selected = index == widget.selectedIndex;
             return Padding(
               padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md, vertical: 2),
@@ -105,8 +140,8 @@ class DemoSidebar extends StatelessWidget {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                   onTap: () {
-                    onSelect(index);
-                    onNavigate?.call();
+                    widget.onSelect(index);
+                    widget.onNavigate?.call();
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -176,6 +211,35 @@ class DemoSidebar extends StatelessWidget {
                                     ? AppColors.textMutedDark
                                     : AppColors.textMuted,
                               )),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.timer_outlined,
+                                size: 12,
+                                color: _remaining.inMinutes < 5
+                                    ? AppColors.danger
+                                    : (isDark
+                                        ? AppColors.primaryLight
+                                        : AppColors.primary),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                DemoService.formatDuration(_remaining),
+                                style: GoogleFonts.robotoMono(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: _remaining.inMinutes < 5
+                                      ? AppColors.danger
+                                      : (isDark
+                                          ? AppColors.primaryLight
+                                          : AppColors.primary),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -205,7 +269,7 @@ class DemoSidebar extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: TextButton.icon(
-                    onPressed: onExitDemo,
+                    onPressed: widget.onExitDemo,
                     icon: const Icon(Icons.logout, size: 16),
                     label: const Text('Exit Demo'),
                     style: TextButton.styleFrom(

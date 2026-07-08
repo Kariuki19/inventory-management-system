@@ -125,7 +125,8 @@ class _SplashScreenState extends State<SplashScreen>
 
     return Scaffold(
       backgroundColor: theme.primaryColor,
-      body: Container(
+      body: SafeArea(
+        child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -264,6 +265,7 @@ class _SplashScreenState extends State<SplashScreen>
             ],
           ),
         ),
+      ),
       ),
     );
   }

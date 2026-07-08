@@ -105,7 +105,8 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
+      body: SafeArea(
+        child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
           child: ConstrainedBox(
@@ -224,6 +225,7 @@ class _DemoExpiredScreenState extends State<DemoExpiredScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

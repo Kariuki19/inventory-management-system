@@ -24,7 +24,7 @@ class DemoExitedScreen extends StatefulWidget {
 
 class _DemoExitedScreenState extends State<DemoExitedScreen> {
   final AnalyticsService _analytics = AnalyticsService();
-  static const Color _blue = Color(0xFF3B82F6);
+  static const Color _orange = Color(0xFFF97316);
 
   @override
   void initState() {
@@ -158,10 +158,10 @@ class _DemoExitedScreenState extends State<DemoExitedScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: _blue.withOpacity(0.08),
+            color: _orange.withOpacity(0.08),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: _blue.withOpacity(0.16),
+              color: _orange.withOpacity(0.16),
             ),
           ),
           child: Text(
@@ -169,7 +169,7 @@ class _DemoExitedScreenState extends State<DemoExitedScreen> {
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: _blue,
+              color: _orange,
             ),
             textAlign: TextAlign.center,
           ),
@@ -182,7 +182,8 @@ class _DemoExitedScreenState extends State<DemoExitedScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
+      body: SafeArea(
+        child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
           child: ConstrainedBox(
@@ -190,18 +191,18 @@ class _DemoExitedScreenState extends State<DemoExitedScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Icon: exit/door arrow, blue, in soft blue circle (130x130, ~12% opacity fill)
+                // Icon: exit/door arrow, orange, in soft orange circle (130x130, ~12% opacity fill)
                 Container(
                   width: 130,
                   height: 130,
                   decoration: BoxDecoration(
-                    color: _blue.withOpacity(0.12),
+                    color: _orange.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.logout,
                     size: 64,
-                    color: _blue,
+                    color: _orange,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -234,14 +235,14 @@ class _DemoExitedScreenState extends State<DemoExitedScreen> {
                 _buildTimeBadge(context),
                 const SizedBox(height: 48),
 
-                // Primary CTA: "Resume Demo" (filled blue, height 54px, radius 14px)
+                // Primary CTA: "Resume Demo" (filled orange, height 54px, radius 14px)
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
                     onPressed: _resumeDemo,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _blue,
+                      backgroundColor: _orange,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -259,15 +260,15 @@ class _DemoExitedScreenState extends State<DemoExitedScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Secondary CTA: "View Plans & Upgrade" (outlined blue, height 54px, radius 14px, 1.5 side)
+                // Secondary CTA: "View Plans & Upgrade" (outlined orange, height 54px, radius 14px, 1.5 side)
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: OutlinedButton(
                     onPressed: _handleViewPlans,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: _blue,
-                      side: const BorderSide(color: _blue, width: 1.5),
+                      foregroundColor: _orange,
+                      side: const BorderSide(color: _orange, width: 1.5),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -329,6 +330,7 @@ class _DemoExitedScreenState extends State<DemoExitedScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

@@ -25,49 +25,79 @@ class DemoStatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceOf(Theme.of(context).brightness),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderOf(Theme.of(context).brightness)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxHeight = constraints.maxHeight;
+        final padding = maxHeight < 100 ? AppSpacing.sm : AppSpacing.md;
+        final spacing = maxHeight < 100 ? 4.0 : AppSpacing.sm;
+        final iconSize = maxHeight < 100 ? 16.0 : 20.0;
+        final sparklineHeight = maxHeight < 100 ? 16.0 : 24.0;
+
+        return Container(
+          padding: EdgeInsets.all(padding),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceOf(Theme.of(context).brightness),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.borderOf(Theme.of(context).brightness)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Icon(icon, color: accent, size: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(maxHeight < 100 ? 4 : AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: Icon(icon, color: accent, size: iconSize),
+                  ),
+                  if (trendData.isNotEmpty && trendData.any((v) => v > 0))
+                    SizedBox(width: 56, height: sparklineHeight, child: _sparkline()),
+                ],
               ),
-              if (trendData.isNotEmpty && trendData.any((v) => v > 0))
-                SizedBox(width: 56, height: 24, child: _sparkline()),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        value,
+                        style: AppTextStyles.statValue(
+                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                        ).copyWith(
+                          fontSize: maxHeight < 100 ? 18.0 : null,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    SizedBox(height: spacing / 2),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        label,
+                        style: AppTextStyles.caption(
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                        ).copyWith(
+                          fontSize: maxHeight < 100 ? 10.0 : null,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            value,
-            style: AppTextStyles.statValue(
-              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: AppTextStyles.caption(
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

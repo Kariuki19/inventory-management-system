@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/demo_countdown_banner.dart';
 import '../../../screens/demo_expired_screen.dart';
 import '../../../screens/demo_exited_screen.dart';
 import '../../inventory/services/inventory_service.dart';
@@ -28,6 +28,7 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _expiredHandled = false;
   final AnalyticsService _analytics = AnalyticsService();
+  Timer? _sessionTimer;
 
   final _pages = const [
     DemoOverviewScreen(),
@@ -45,14 +46,31 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     
     // Ensure the session is initialized when workspace is opened
     _initDemoSession();
+
+    // Start periodic check for expiration
+    _startSessionTimer();
   }
 
   Future<void> _initDemoSession() async {
     await DemoService.startSession();
   }
 
+  void _startSessionTimer() {
+    _sessionTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _checkSessionExpiration();
+    });
+  }
+
+  Future<void> _checkSessionExpiration() async {
+    final remaining = await DemoService.getRemainingTime();
+    if (remaining <= Duration.zero && !_expiredHandled) {
+      _handleDemoExpired();
+    }
+  }
+
   @override
   void dispose() {
+    _sessionTimer?.cancel();
     InventoryService.isDemoMode = false;
     super.dispose();
   }
@@ -153,12 +171,6 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
                 Expanded(
                   child: Column(
                     children: [
-                      DemoCountdownBanner(
-                        getRemainingTime: DemoService.getRemainingTime,
-                        onExpired: _handleDemoExpired,
-                        onExit: _showExitConfirmation,
-                        message: 'Demo Mode Active',
-                      ),
                       DemoTopBar(title: demoNavItems[_selectedIndex].label),
                       Expanded(
                         child: IndexedStack(index: _selectedIndex, children: _pages),
@@ -186,19 +198,7 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
             title: demoNavItems[_selectedIndex].label,
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
           ),
-          body: Column(
-            children: [
-              DemoCountdownBanner(
-                getRemainingTime: DemoService.getRemainingTime,
-                onExpired: _handleDemoExpired,
-                onExit: _showExitConfirmation,
-                message: 'Demo Mode Active',
-              ),
-              Expanded(
-                child: IndexedStack(index: _selectedIndex, children: _pages),
-              ),
-            ],
-          ),
+          body: IndexedStack(index: _selectedIndex, children: _pages),
         );
       },
     );

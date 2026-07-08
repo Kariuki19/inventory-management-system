@@ -9,7 +9,8 @@ class ExpiryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
+      body: SafeArea(
+        child: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32.0),
           child: Column(
@@ -95,6 +96,7 @@ class ExpiryScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }
