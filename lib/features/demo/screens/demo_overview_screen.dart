@@ -6,11 +6,7 @@ import '../../inventory/models/inventory_item.dart';
 import '../../inventory/services/inventory_service.dart';
 import '../widgets/demo_stat_card.dart';
 
-/// The demo "home page" — Overview dashboard shown by default in the demo
-/// workspace. Rebuilt flat/bordered (no elevation, no gradients) using the
-/// central AppColors/AppTextStyles tokens, laid out to match the reference
-/// SaaS dashboards: stat row, stock chart + alerts panel, category
-/// breakdown.
+
 class DemoOverviewScreen extends StatefulWidget {
   const DemoOverviewScreen({super.key});
 

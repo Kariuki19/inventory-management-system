@@ -6,6 +6,7 @@ import '../../../screens/demo_exited_screen.dart';
 import '../../inventory/services/inventory_service.dart';
 import '../../inventory/services/demo_service.dart';
 import '../../inventory/services/analytics_service.dart';
+import '../../auth/services/auth_service.dart';
 import '../../inventory/screens/inventory_list_screen.dart';
 import '../../stock/screens/stock_movements_screen.dart';
 import '../widgets/demo_sidebar.dart';
@@ -41,10 +42,9 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   @override
   void initState() {
     super.initState();
-    InventoryService.isDemoMode = true;
     _analytics.logDemoStarted();
-    
-    // Ensure the session is initialized when workspace is opened
+
+    // Sign in anonymously for demo mode
     _initDemoSession();
 
     // Start periodic check for expiration
@@ -52,6 +52,9 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   }
 
   Future<void> _initDemoSession() async {
+    // Sign in with Firebase Anonymous Auth
+    await AuthService.signInAnonymously();
+    // Start the demo session timer
     await DemoService.startSession();
   }
 
@@ -71,7 +74,6 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   @override
   void dispose() {
     _sessionTimer?.cancel();
-    InventoryService.isDemoMode = false;
     super.dispose();
   }
 

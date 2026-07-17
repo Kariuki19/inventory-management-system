@@ -24,6 +24,11 @@ class AppUser {
   final bool predictionAlertsEnabled;
   final DateTime? trialStartDate;
 
+  // Demo mode fields
+  final bool isAnonymous;
+  final int demoWriteCount;
+  final DateTime? demoLastWriteAt;
+
   bool get isTrialActive {
     if (trialStartDate == null) return false;
     final now = DateTime.now();
@@ -56,6 +61,9 @@ class AppUser {
     this.stockAlertsEnabled = true,
     this.predictionAlertsEnabled = true,
     this.trialStartDate,
+    this.isAnonymous = false,
+    this.demoWriteCount = 0,
+    this.demoLastWriteAt,
   });
 
   factory AppUser.fromMap(Map<String, dynamic> map, String documentId) {
@@ -114,6 +122,12 @@ class AppUser {
               map['trial_start_date'] != null
           ? parseTimestamp(map['trialStartDate'] ?? map['trial_start_date'])
           : null,
+      isAnonymous: _convertToBool(map['isAnonymous'] ?? map['is_anonymous'] ?? false),
+      demoWriteCount: map['demoWriteCount'] ?? map['demo_write_count'] ?? 0,
+      demoLastWriteAt: map['demoLastWriteAt'] != null ||
+              map['demo_last_write_at'] != null
+          ? parseTimestamp(map['demoLastWriteAt'] ?? map['demo_last_write_at'])
+          : null,
     );
   }
 
@@ -135,6 +149,9 @@ class AppUser {
       'stockAlertsEnabled': stockAlertsEnabled,
       'predictionAlertsEnabled': predictionAlertsEnabled,
       'trialStartDate': trialStartDate,
+      'isAnonymous': isAnonymous,
+      'demoWriteCount': demoWriteCount,
+      'demoLastWriteAt': demoLastWriteAt,
     };
   }
 
@@ -158,6 +175,9 @@ class AppUser {
       'stockAlertsEnabled': stockAlertsEnabled,
       'predictionAlertsEnabled': predictionAlertsEnabled,
       'trialStartDate': trialStartDate?.toIso8601String(),
+      'isAnonymous': isAnonymous,
+      'demoWriteCount': demoWriteCount,
+      'demoLastWriteAt': demoLastWriteAt?.toIso8601String(),
     };
   }
 
@@ -192,6 +212,11 @@ class AppUser {
       trialStartDate: json['trialStartDate'] != null
           ? DateTime.parse(json['trialStartDate'])
           : null,
+      isAnonymous: _convertToBool(json['isAnonymous'] ?? false),
+      demoWriteCount: json['demoWriteCount'] ?? 0,
+      demoLastWriteAt: json['demoLastWriteAt'] != null
+          ? DateTime.parse(json['demoLastWriteAt'])
+          : null,
     );
   }
 
@@ -213,6 +238,9 @@ class AppUser {
     bool? stockAlertsEnabled,
     bool? predictionAlertsEnabled,
     DateTime? trialStartDate,
+    bool? isAnonymous,
+    int? demoWriteCount,
+    DateTime? demoLastWriteAt,
   }) {
     return AppUser(
       id: id ?? this.id,
@@ -235,6 +263,9 @@ class AppUser {
       predictionAlertsEnabled:
           predictionAlertsEnabled ?? this.predictionAlertsEnabled,
       trialStartDate: trialStartDate ?? this.trialStartDate,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
+      demoWriteCount: demoWriteCount ?? this.demoWriteCount,
+      demoLastWriteAt: demoLastWriteAt ?? this.demoLastWriteAt,
     );
   }
 

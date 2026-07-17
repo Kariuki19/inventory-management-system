@@ -275,18 +275,171 @@ class AuthService {
     }
   }
 
+  // Sign in anonymously for demo mode
+  static Future<AppUser?> signInAnonymously() async {
+    try {
+      final UserCredential userCredential = await _auth.signInAnonymously();
+
+      if (userCredential.user != null) {
+        // Check if user document exists
+        final userDoc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
+
+        if (!userDoc.exists) {
+          // Create new anonymous user document
+          await _firestore.collection('users').doc(userCredential.user!.uid).set({
+            'email': '',
+            'displayName': 'Demo User',
+            'profilePhotoPath': null,
+            'role': 'admin',
+            'createdAt': FieldValue.serverTimestamp(),
+            'lastLoginAt': FieldValue.serverTimestamp(),
+            'isActive': true,
+            'phone': '',
+            'emailNotificationsEnabled': true,
+            'smsNotificationsEnabled': true,
+            'expiryAlertsEnabled': true,
+            'stockAlertsEnabled': true,
+            'predictionAlertsEnabled': true,
+            'isAnonymous': true,
+            'demoWriteCount': 0,
+            'demoLastWriteAt': FieldValue.serverTimestamp(),
+            'trialStartDate': FieldValue.serverTimestamp(),
+            'organizationId': await _generateUniqueOrganizationId(),
+            'adminUid': userCredential.user!.uid,
+          });
+        }
+
+        // Wait for auth state to propagate
+        final completer = Completer<AppUser?>();
+        final subscription = authStateChanges.listen((user) {
+          if (!completer.isCompleted) {
+            completer.complete(user);
+          }
+        });
+
+        final timeout = Future.delayed(const Duration(seconds: 5), () => null);
+        final result = await Future.any([completer.future, timeout]);
+        subscription.cancel();
+
+        if (result != null) {
+          await _resetHomeTabIndex();
+        }
+
+        return result;
+      }
+
+      return null;
+    } catch (e) {
+      throw AuthException('Anonymous sign in failed: ${_getAuthErrorMessage(e)}');
+    }
+  }
+
+  // Link anonymous account with email/password for demo-to-full upgrade
+  static Future<AppUser?> linkAnonymousAccountWithEmailPassword({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      throw AuthException('No user is currently signed in');
+    }
+
+    if (!currentUser.isAnonymous) {
+      throw AuthException('Current user is not anonymous');
+    }
+
+    try {
+      // Create credential for email/password
+      final credential = EmailAuthProvider.credential(email: email, password: password);
+
+      // Link the credential to the anonymous account
+      final UserCredential userCredential = await currentUser.linkWithCredential(credential);
+
+      if (userCredential.user != null) {
+        // Update user document with email and remove anonymous flag
+        await _firestore.collection('users').doc(userCredential.user!.uid).update({
+          'email': email,
+          'displayName': displayName,
+          'isAnonymous': false,
+          'lastLoginAt': FieldValue.serverTimestamp(),
+        });
+
+        // Update display name in Firebase Auth
+        await userCredential.user!.updateDisplayName(displayName);
+
+        // Wait for auth state to propagate
+        final completer = Completer<AppUser?>();
+        final subscription = authStateChanges.listen((user) {
+          if (!completer.isCompleted) {
+            completer.complete(user);
+          }
+        });
+
+        final timeout = Future.delayed(const Duration(seconds: 5), () => null);
+        final result = await Future.any([completer.future, timeout]);
+        subscription.cancel();
+
+        if (result != null) {
+          await _resetHomeTabIndex();
+        }
+
+        return result;
+      }
+
+      return null;
+    } catch (e) {
+      throw AuthException('Account linking failed: ${_getAuthErrorMessage(e)}');
+    }
+  }
+
+  // Check if current user is anonymous
+  static bool isCurrentUserAnonymous() {
+    return _auth.currentUser?.isAnonymous ?? false;
+  }
+
+  // Increment demo write count for anonymous users
+  static Future<void> incrementDemoWriteCount() async {
+    if (!isCurrentUserAnonymous()) return;
+
+    try {
+      await _firestore.collection('users').doc(_auth.currentUser!.uid).update({
+        'demoWriteCount': FieldValue.increment(1),
+        'demoLastWriteAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      // Don't throw - this is a tracking operation
+    }
+  }
+
+  // Get current demo write count
+  static Future<int> getDemoWriteCount() async {
+    if (!isCurrentUserAnonymous()) return 0;
+
+    try {
+      final userDoc = await _firestore.collection('users').doc(_auth.currentUser!.uid).get();
+      if (userDoc.exists) {
+        final data = userDoc.data() as Map<String, dynamic>;
+        return data['demoWriteCount'] as int? ?? 0;
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+    return 0;
+  }
+
   // Generate a unique 6-character organization ID
   static Future<String> _generateUniqueOrganizationId() async {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid ambiguous chars
     final random = DateTime.now().microsecondsSinceEpoch;
-    
+
     while (true) {
       String code = '';
       for (int i = 0; i < 6; i++) {
         // Using a simple pseudo-random approach for 6 chars
         code += chars[(DateTime.now().microsecondsSinceEpoch + i) % chars.length];
       }
-      
+
       // Check for uniqueness
       // Added where('role', isEqualTo: 'admin') so this query satisfies the
       // Firestore security rule which allows querying if resource.data.role == 'admin'
