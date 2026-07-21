@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../help/screens/help_support_screen.dart';
 import '../../auth/screens/widget_tree.dart';
+import '../../auth/services/auth_service.dart';
+import '../../auth/models/user_model.dart';
+import '../../../core/providers/demo_mode_provider.dart';
 
 /// A sandboxed stand-in for [ProfileScreen] used inside the interactive demo.
 ///
@@ -9,13 +13,14 @@ import '../../auth/screens/widget_tree.dart';
 /// change password, sign out, admin tools) with no demo-mode guard. Reusing
 /// it here would let a demo visitor trigger real auth writes, or accidentally
 /// sign a genuinely logged-in user out of their real account. This screen
-/// shows a fake persona instead and funnels every action toward sign-up.
+/// shows the real anonymous user data and funnels every action toward sign-up.
 class DemoProfileScreen extends StatelessWidget {
   const DemoProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final currentUser = AuthService.currentUser;
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -65,7 +70,7 @@ class DemoProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Demo Admin',
+                    currentUser?.displayName ?? 'Demo User',
                     style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
@@ -73,7 +78,9 @@ class DemoProfileScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Sandbox session — nothing here is saved',
+                    currentUser?.isAnonymous == true
+                        ? 'Demo session — your data is saved in the cloud'
+                        : 'Sandbox session — nothing here is saved',
                     style: GoogleFonts.poppins(
                       fontSize: 13,
                       color: isDark ? Colors.white60 : Colors.grey[600],
@@ -83,7 +90,7 @@ class DemoProfileScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 28),
-            _buildInfoCard(context, isDark),
+            _buildInfoCard(context, isDark, currentUser),
             const SizedBox(height: 16),
             _buildSettingsCard(context),
             const SizedBox(height: 16),
@@ -95,7 +102,7 @@ class DemoProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(BuildContext context, bool isDark) {
+  Widget _buildInfoCard(BuildContext context, bool isDark, AppUser? currentUser) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       elevation: 2,
@@ -120,10 +127,10 @@ class DemoProfileScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            _infoRow(context, 'Full Name', 'Demo Admin'),
-            _infoRow(context, 'Email', 'demo@stocksense.app'),
-            _infoRow(context, 'Role', 'Admin (Preview)'),
-            _infoRow(context, 'Status', 'Sandbox — not a real account'),
+            _infoRow(context, 'Full Name', currentUser?.displayName ?? 'Demo User'),
+            _infoRow(context, 'Email', currentUser?.email?.isNotEmpty == true ? currentUser!.email : 'Anonymous'),
+            _infoRow(context, 'Role', currentUser?.isAdmin == true ? 'Admin (Demo)' : 'Staff (Demo)'),
+            _infoRow(context, 'Status', currentUser?.isAnonymous == true ? 'Demo account — upgrade to save' : 'Sandbox — not a real account'),
           ],
         ),
       ),

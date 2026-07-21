@@ -44,9 +44,8 @@ String _confidenceLabel(PredictionConfidence confidence) {
 
 /// Flat, bordered predictions page for the demo shell — no elevation, no
 /// gradients, built entirely from the central AppColors/AppTextStyles
-/// tokens. Mirrors the real PredictionsScreen's data/urgency logic but
-/// drops the Firestore-pagination plumbing since the demo dataset is small
-/// and already fully returned by MockInventoryService in one call.
+/// tokens. Mirrors the real PredictionsScreen's data/urgency logic.
+/// Demo mode now uses real Firestore data with Anonymous Auth.
 class DemoPredictionsScreen extends StatefulWidget {
   const DemoPredictionsScreen({super.key});
 

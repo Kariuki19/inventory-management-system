@@ -3,10 +3,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'core/providers/theme_provider.dart';
+import 'core/providers/demo_mode_provider.dart';
 import 'features/auth/services/auth_service.dart';
 import 'core/services/offline_service.dart';
 import 'core/services/notification_service.dart';
 import 'features/onboarding/screens/splash_screen.dart';
+import 'features/inventory/services/inventory_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,10 +25,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        ChangeNotifierProvider(create: (context) => DemoModeProvider()),
+      ],
+      child: Consumer2<ThemeProvider, DemoModeProvider>(
+        builder: (context, themeProvider, demoModeProvider, child) {
+          // Initialize InventoryService with DemoModeProvider
+          InventoryService.setDemoModeProvider(demoModeProvider);
+
           return MaterialApp(
             title: 'StockSense',
             debugShowCheckedModeBanner: false,

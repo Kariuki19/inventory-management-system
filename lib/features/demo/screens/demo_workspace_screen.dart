@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/providers/demo_mode_provider.dart';
 import '../../../screens/demo_expired_screen.dart';
 import '../../../screens/demo_exited_screen.dart';
 import '../../inventory/services/inventory_service.dart';
@@ -44,7 +46,7 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     super.initState();
     _analytics.logDemoStarted();
 
-    // Sign in anonymously for demo mode
+    // Set demo mode via provider
     _initDemoSession();
 
     // Start periodic check for expiration
@@ -52,8 +54,10 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   }
 
   Future<void> _initDemoSession() async {
-    // Sign in with Firebase Anonymous Auth
-    await AuthService.signInAnonymously();
+    // Set demo mode to true via provider
+    final demoModeProvider = Provider.of<DemoModeProvider>(context, listen: false);
+    await demoModeProvider.setDemoMode(true);
+
     // Start the demo session timer
     await DemoService.startSession();
   }
@@ -74,6 +78,9 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   @override
   void dispose() {
     _sessionTimer?.cancel();
+    // Turn off demo mode when exiting demo workspace
+    final demoModeProvider = Provider.of<DemoModeProvider>(context, listen: false);
+    demoModeProvider.setDemoMode(false);
     super.dispose();
   }
 

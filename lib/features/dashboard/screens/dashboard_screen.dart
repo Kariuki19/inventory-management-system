@@ -14,6 +14,8 @@ import '../../expiry/services/expiry_notification_service.dart';
 import '../../auth/models/user_model.dart';
 import '../../inventory/models/inventory_item.dart';
 import '../../../core/providers/theme_provider.dart';
+import '../../../core/providers/demo_mode_provider.dart';
+import '../../../core/widgets/demo_mode_banner.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../../../core/widgets/stat_card.dart';
@@ -148,6 +150,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Demo Mode Banner
+              const DemoModeBanner(),
+              const SizedBox(height: 10),
+
               // Trial Status Banner
               _buildTrialBanner(),
               const SizedBox(height: 10),
@@ -192,7 +198,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildTrialBanner() {
-    if (InventoryService.isDemoMode) return const SizedBox.shrink();
+    // Trial banner is shown for non-anonymous users with active trials
+    if (AuthService.isCurrentUserAnonymous()) return const SizedBox.shrink();
 
     return const _TrialCountdownBanner();
   }

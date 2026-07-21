@@ -1,38 +1,54 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authenticated users to read and write all inventory data
-    match /inventory_items/{document} {
-      allow read, write: if request.auth != null;
+    // Helper function to check if the current user is the admin or staff associated with adminUid
+    function isOwnerOrStaff(adminUid) {
+      return request.auth != null && (
+        request.auth.uid == adminUid || 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.adminUid == adminUid
+      );
     }
-    
-    // Allow authenticated users to read and write stock movements
-    match /stock_movements/{document} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Allow authenticated users to read and write stock predictions
-    match /stock_predictions/{document} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Allow authenticated users to read categories
-    match /categories/{document} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && 
+
+    // Helper function to check if the current user is an admin
+    function isAdmin() {
+      return request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
-    
-    // User documents - users can read/write their own data, admins can read all
+
+    // Users collection rules
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
-      allow read: if request.auth != null && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      allow write: if request.auth != null && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
       
-      // Allow newly authenticated users (during signup) to find admins for invite validation and organization ID generation
+      // Admins can read/write their staff's documents
+      allow read, write: if request.auth != null && 
+        resource != null && resource.data.adminUid == request.auth.uid;
+      
+      // Allow searching for admins during signup for invite validation
       allow read: if request.auth != null && resource.data.role == 'admin';
+    }
+
+    // Subcollections under users/{adminUid} (Data Isolation)
+    match /users/{adminUid}/inventory_items/{document} {
+      allow read, write: if isOwnerOrStaff(adminUid);
+    }
+    
+    match /users/{adminUid}/stock_movements/{document} {
+      allow read, write: if isOwnerOrStaff(adminUid);
+    }
+    
+    match /users/{adminUid}/stock_predictions/{document} {
+      allow read, write: if isOwnerOrStaff(adminUid);
+    }
+    
+    match /users/{adminUid}/categories/{document} {
+      allow read: if isOwnerOrStaff(adminUid);
+      allow write: if isOwnerOrStaff(adminUid) && isAdmin();
+    }
+    
+    // Support global app_config collection (FAQ, Pricing, Contacts)
+    match /app_config/{document} {
+      allow read: if request.auth != null;
+      allow write: if false; // Configured via Console/Admin panel only
     }
     
     // Allow authenticated users to read and write image uploads

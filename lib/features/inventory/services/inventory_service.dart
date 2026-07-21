@@ -1,5 +1,8 @@
+import 'dart:convert';
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/inventory_item.dart';
 import '../../stock/models/stock_movement.dart';
 import '../../predictions/models/stock_prediction.dart';
@@ -7,13 +10,34 @@ import '../exceptions/inventory_exceptions.dart';
 import '../../../core/services/notification_service.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/models/user_model.dart';
+import '../../../core/providers/demo_mode_provider.dart';
 
 class InventoryService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Demo write limit for anonymous users
-  static const int _demoWriteLimit = 20;
+  // Demo mode provider instance
+  static DemoModeProvider? _demoModeProvider;
+
+  // Set the demo mode provider (called from main.dart)
+  static void setDemoModeProvider(DemoModeProvider provider) {
+    _demoModeProvider = provider;
+  }
+
+  // Broadcast controller to update sandbox UI on updates
+  static final StreamController<void> _demoUpdateController =
+      StreamController<void>.broadcast();
+
+  // Check if demo mode is active
+  static bool get isDemoMode => _demoModeProvider?.isDemoMode ?? false;
+
+  // Check if write operations should be blocked
+  static bool shouldBlockWrite() => _demoModeProvider?.shouldBlockWrite() ?? false;
+
+  // Get the appropriate collection name based on demo mode
+  static String _getCollectionName(String baseCollectionName) {
+    return _demoModeProvider?.getCollectionName(baseCollectionName) ?? baseCollectionName;
+  }
 
   // Collection names
   static const String _inventoryCollection = 'inventory_items';
@@ -27,6 +51,9 @@ class InventoryService {
       throw InventoryException('User not authenticated');
     }
 
+    // Get the appropriate collection name based on demo mode
+    final actualCollectionName = _getCollectionName(collectionName);
+
     // For multi-role support: Staff should use their Admin's UID for data access
     final adminUid = AuthService.currentUser?.adminUid;
     if (adminUid == null || adminUid.isEmpty) {
@@ -34,27 +61,15 @@ class InventoryService {
        return _firestore
           .collection('users')
           .doc(AuthService.currentUser!.id)
-          .collection(collectionName);
+          .collection(actualCollectionName);
     }
 
     return _firestore
         .collection('users')
         .doc(adminUid)
-        .collection(collectionName);
+        .collection(actualCollectionName);
   }
 
-  // Check if anonymous user has reached write limit
-  static Future<bool> _checkDemoWriteLimit() async {
-    if (!AuthService.isCurrentUserAnonymous()) return true;
-
-    final writeCount = await AuthService.getDemoWriteCount();
-    if (writeCount >= _demoWriteLimit) {
-      throw InventoryException(
-        'Demo write limit reached ($_demoWriteLimit items). Sign up for a free account to continue.',
-      );
-    }
-    return true;
-  }
 
   // Initialize collections with proper indexes (run per-user if needed)
   static Future<void> initializeFirestore() async {
@@ -204,19 +219,16 @@ class InventoryService {
   }
 
   static Future<String> addInventoryItem(InventoryItem item) async {
-    // Check demo write limit for anonymous users
-    await _checkDemoWriteLimit();
+    // Block write operations in demo mode
+    if (shouldBlockWrite()) {
+      throw InventoryException('Demo Mode is read-only. Action cannot be saved.');
+    }
 
     try {
       final docRef = await _getCollection(_inventoryCollection).add(item.toMap());
 
       // Add category to categories collection if it doesn't exist
       await _ensureCategoryExists(item.category);
-
-      // Increment demo write count for anonymous users
-      if (AuthService.isCurrentUserAnonymous()) {
-        await AuthService.incrementDemoWriteCount();
-      }
 
       // Log initial stock movement
       await _logStockMovement(StockMovement(
@@ -252,6 +264,11 @@ class InventoryService {
   }
 
   static Future<void> updateInventoryItem(InventoryItem item) async {
+    // Block write operations in demo mode
+    if (shouldBlockWrite()) {
+      throw InventoryException('Demo Mode is read-only. Action cannot be saved.');
+    }
+
     try {
       await _getCollection(_inventoryCollection)
           .doc(item.id)
@@ -282,6 +299,11 @@ class InventoryService {
   }
 
   static Future<void> deleteInventoryItem(String itemId) async {
+    // Block write operations in demo mode
+    if (shouldBlockWrite()) {
+      throw InventoryException('Demo Mode is read-only. Action cannot be saved.');
+    }
+
     try {
       await _getCollection(_inventoryCollection).doc(itemId).delete();
 
@@ -296,6 +318,11 @@ class InventoryService {
 
   static Future<void> adjustStock(
       String itemId, int newQuantity, String reason) async {
+    // Block write operations in demo mode
+    if (shouldBlockWrite()) {
+      throw InventoryException('Demo Mode is read-only. Action cannot be saved.');
+    }
+
     try {
       final itemDoc =
           await _getCollection(_inventoryCollection).doc(itemId).get();
@@ -1188,5 +1215,16 @@ class InventoryService {
     } catch (e) {
       throw InventoryException('Failed to get user data: $e');
     }
+  }
+
+  // Get app global configs (FAQ, pricing, support contacts)
+  static Future<Map<String, dynamic>?> getAppConfig(String docName) async {
+    try {
+      final doc = await _firestore.collection('app_config').doc(docName).get();
+      if (doc.exists) {
+        return doc.data();
+      }
+    } catch (_) {}
+    return null;
   }
 }

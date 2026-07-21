@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../../auth/models/user_model.dart';
 import '../../auth/services/auth_service.dart';
@@ -11,6 +12,8 @@ import '../../notifications/screens/notification_settings_screen.dart';
 import '../../reports/screens/system_reports_screen.dart';
 import '../../help/screens/help_support_screen.dart';
 import '../../home/screens/home_page.dart';
+import '../../../core/providers/demo_mode_provider.dart';
+import '../../../core/widgets/demo_mode_toggle.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -560,6 +563,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
             const SizedBox(height: 16),
+            // Demo Mode Toggle
+            _buildSettingsOption(
+              icon: Icons.visibility,
+              title: 'Demo Mode',
+              subtitle: 'Switch between Live and Demo mode',
+              onTap: () {},
+              trailingWidget: const DemoModeToggle(),
+              iconColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.orange[300]
+                  : Colors.orange[700],
+            ),
+            const SizedBox(height: 8),
             _buildSettingsOption(
               icon: Icons.notifications,
               title: 'Notifications',
@@ -622,6 +637,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String subtitle,
     required VoidCallback onTap,
     Color? iconColor,
+    Widget? trailingWidget,
   }) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -653,7 +669,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               : Colors.grey[600],
         ),
       ),
-      trailing: Icon(
+      trailing: trailingWidget ?? Icon(
         Icons.arrow_forward_ios,
         size: 16,
         color: Theme.of(context).brightness == Brightness.dark
