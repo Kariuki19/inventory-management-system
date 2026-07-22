@@ -21,83 +21,85 @@ class DemoTopBar extends StatelessWidget implements PreferredSizeWidget {
     final isDark = brightness == Brightness.dark;
     final showSearch = MediaQuery.of(context).size.width >= 700;
 
-    return Container(
-      height: preferredSize.height,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceOf(brightness),
-        border: Border(bottom: BorderSide(color: AppColors.borderOf(brightness))),
-      ),
-      child: Row(
-        children: [
-          if (onMenuTap != null) ...[
-            IconButton(
-              onPressed: onMenuTap,
-              icon: Icon(Icons.menu,
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary),
+    return SafeArea(
+      child: Container(
+        height: preferredSize.height,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceOf(brightness),
+          border: Border(bottom: BorderSide(color: AppColors.borderOf(brightness))),
+        ),
+        child: Row(
+          children: [
+            if (onMenuTap != null) ...[
+              IconButton(
+                onPressed: onMenuTap,
+                icon: Icon(Icons.menu,
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+            ],
+            Flexible(
+              child: Text(title,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.h2(
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
+                  )),
             ),
-            const SizedBox(width: AppSpacing.sm),
-          ],
-          Flexible(
-            child: Text(title,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.h2(
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
-                )),
-          ),
-          if (showSearch) ...[
-            const SizedBox(width: AppSpacing.xl),
-            Expanded(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 320),
-                child: TextField(
-                  enabled: false,
-                  style: AppTextStyles.bodyRegular(
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Search inventory...',
-                    hintStyle: AppTextStyles.bodyRegular(
-                      color: isDark ? AppColors.textMutedDark : AppColors.textMuted,
+            if (showSearch) ...[
+              const SizedBox(width: AppSpacing.xl),
+              Expanded(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: TextField(
+                    enabled: false,
+                    style: AppTextStyles.bodyRegular(
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
                     ),
-                    prefixIcon: Icon(Icons.search,
-                        size: 20,
-                        color:
-                            isDark ? AppColors.textMutedDark : AppColors.textMuted),
-                    filled: true,
-                    fillColor: isDark
-                        ? AppColors.backgroundDark
-                        : AppColors.background,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      borderSide: BorderSide(color: AppColors.borderOf(brightness)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      borderSide: BorderSide(color: AppColors.borderOf(brightness)),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      borderSide: BorderSide(color: AppColors.borderOf(brightness)),
+                    decoration: InputDecoration(
+                      hintText: 'Search inventory...',
+                      hintStyle: AppTextStyles.bodyRegular(
+                        color: isDark ? AppColors.textMutedDark : AppColors.textMuted,
+                      ),
+                      prefixIcon: Icon(Icons.search,
+                          size: 20,
+                          color:
+                              isDark ? AppColors.textMutedDark : AppColors.textMuted),
+                      filled: true,
+                      fillColor: isDark
+                          ? AppColors.backgroundDark
+                          : AppColors.background,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        borderSide: BorderSide(color: AppColors.borderOf(brightness)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        borderSide: BorderSide(color: AppColors.borderOf(brightness)),
+                      ),
+                      disabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        borderSide: BorderSide(color: AppColors.borderOf(brightness)),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
-          const Spacer(),
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, _) => IconButton(
-              tooltip: themeProvider.isDarkMode ? 'Switch to light theme' : 'Switch to dark theme',
-              onPressed: themeProvider.toggleTheme,
-              icon: Icon(
-                themeProvider.isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+            ],
+            const Spacer(),
+            Consumer<ThemeProvider>(
+              builder: (context, themeProvider, _) => IconButton(
+                tooltip: themeProvider.isDarkMode ? 'Switch to light theme' : 'Switch to dark theme',
+                onPressed: themeProvider.toggleTheme,
+                icon: Icon(
+                  themeProvider.isDarkMode ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -53,40 +53,36 @@ class InventoryService {
   static const String _sharedDemoAdminUid = 'demo_admin_seed';
 
   // Helper to get user-specific collection reference
+  // Helper to get user-specific collection reference
   static CollectionReference _getCollection(String collectionName) {
-    if (AuthService.currentUser == null) {
-      throw InventoryException('User not authenticated');
-    }
-
     // Get the appropriate collection name based on demo mode
     final actualCollectionName = _getCollectionName(collectionName);
 
-    // Public/anonymous trial users always read the one shared, pre-seeded
-    // demo dataset — never their own (empty) subcollection. This is distinct
-    // from a real admin's personal "Demo Mode" sandbox toggle below, which
-    // still reads/writes under their own adminUid.
-    if (AuthService.currentUser!.isAnonymous) {
+    // 1. If unauthenticated user OR anonymous user, point directly to the shared demo seed data
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null || currentUser.isAnonymous) {
       return _firestore
-          .collection('users')
-          .doc(_sharedDemoAdminUid)
-          .collection(actualCollectionName);
+      .collection('users')
+      .doc(_sharedDemoAdminUid)
+      .collection(actualCollectionName);
     }
 
-    // For multi-role support: Staff should use their Admin's UID for data access
-    final adminUid = AuthService.currentUser?.adminUid;
+    // 2. Multi-role support: Staff/Admin users using their configured Admin UID
+    final adminUid = currentUser.adminUid;
     if (adminUid == null || adminUid.isEmpty) {
-       // Fallback to current user UID if adminUid is missing (should not happen for valid profiles)
-       return _firestore
-          .collection('users')
-          .doc(AuthService.currentUser!.id)
-          .collection(actualCollectionName);
+      // Fallback to current user UID if adminUid is missing
+      return _firestore
+      .collection('users')
+      .doc(currentUser.id)
+      .collection(actualCollectionName);
     }
 
     return _firestore
-        .collection('users')
-        .doc(adminUid)
-        .collection(actualCollectionName);
+    .collection('users')
+    .doc(adminUid)
+    .collection(actualCollectionName);
   }
+
 
 
   // Initialize collections with proper indexes (run per-user if needed)

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../screens/demo_exited_screen.dart';
 import '../../auth/screens/widget_tree.dart';
 import '../../inventory/services/demo_service.dart';
 
@@ -74,9 +75,11 @@ class _DemoSidebarState extends State<DemoSidebar> {
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final sidebarWidth = (screenWidth * 0.8).clamp(248.0, 320.0);
 
     return Container(
-      width: 248,
+      width: sidebarWidth,
       color: AppColors.surfaceOf(brightness),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -104,13 +107,13 @@ class _DemoSidebarState extends State<DemoSidebar> {
                       )),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
+                    color: AppColors.primary,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text('DEMO',
-                      style: AppTextStyles.caption(color: AppColors.primaryDark)
+                      style: AppTextStyles.caption(color: Colors.white)
                           .copyWith(fontSize: 10, fontWeight: FontWeight.w700)),
                 ),
               ],
@@ -133,7 +136,7 @@ class _DemoSidebarState extends State<DemoSidebar> {
             final selected = index == widget.selectedIndex;
             return Padding(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: 2),
+                  horizontal: AppSpacing.md, vertical: 4),
               child: Material(
                 color: selected ? AppColors.primarySurface : Colors.transparent,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -145,7 +148,7 @@ class _DemoSidebarState extends State<DemoSidebar> {
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md, vertical: 10),
+                        horizontal: AppSpacing.md, vertical: 12),
                     child: Row(
                       children: [
                         Icon(item.icon,
@@ -245,7 +248,7 @@ class _DemoSidebarState extends State<DemoSidebar> {
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.lg),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -265,11 +268,12 @@ class _DemoSidebarState extends State<DemoSidebar> {
                     child: Text('Sign Up Free', style: AppTextStyles.buttonLabel()),
                   ),
                 ),
-                const SizedBox(height: 6),
-                SizedBox(
-                  width: double.infinity,
+                const SizedBox(height: AppSpacing.sm),
+                Center(
                   child: TextButton.icon(
-                    onPressed: widget.onExitDemo,
+                    onPressed: () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const DemoExitedScreen()),
+                    ),
                     icon: const Icon(Icons.logout, size: 16),
                     label: const Text('Exit Demo'),
                     style: TextButton.styleFrom(

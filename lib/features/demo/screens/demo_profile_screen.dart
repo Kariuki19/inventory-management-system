@@ -6,6 +6,7 @@ import '../../auth/screens/widget_tree.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/models/user_model.dart';
 import '../../../core/providers/demo_mode_provider.dart';
+import '../../../screens/demo_exited_screen.dart';
 
 /// A sandboxed stand-in for [ProfileScreen] used inside the interactive demo.
 ///
@@ -328,7 +329,9 @@ class DemoProfileScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const DemoExitedScreen()),
+                ),
                 child: Text(
                   'Exit Demo',
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
