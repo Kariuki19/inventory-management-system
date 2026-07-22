@@ -19,15 +19,13 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
       
-      // Admins can read/write their staff's documents
       allow read, write: if request.auth != null && 
         resource != null && resource.data.adminUid == request.auth.uid;
       
-      // Allow searching for admins during signup for invite validation
       allow read: if request.auth != null && resource.data.role == 'admin';
     }
 
-    // Subcollections under users/{adminUid} (Data Isolation)
+    // Subcollections under users/{adminUid} (Data Isolation) — real tenant data
     match /users/{adminUid}/inventory_items/{document} {
       allow read, write: if isOwnerOrStaff(adminUid);
     }
@@ -44,11 +42,54 @@ service cloud.firestore {
       allow read: if isOwnerOrStaff(adminUid);
       allow write: if isOwnerOrStaff(adminUid) && isAdmin();
     }
+
+    // Legacy/top-level live collections — see note below before deploying
+    match /categories/{document} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /inventory_items/{document} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /stock_movements/{document} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /stock_predictions/{document} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Dedicated demo dataset — completely separate collections, read-only
+    // for everyone; only the Admin SDK seed script can write to these.
+    match /demo_categories/{document} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /demo_inventory_items/{document} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /demo_stock_movements/{document} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /demo_stock_predictions/{document} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
     
     // Support global app_config collection (FAQ, Pricing, Contacts)
     match /app_config/{document} {
       allow read: if request.auth != null;
-      allow write: if false; // Configured via Console/Admin panel only
+      allow write: if false;
     }
     
     // Allow authenticated users to read and write image uploads
