@@ -33,6 +33,18 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
   final AnalyticsService _analytics = AnalyticsService();
   Timer? _sessionTimer;
 
+  // Gates building the demo pages until anonymous sign-in has actually
+  // completed. Without this, DemoOverviewScreen (and friends) fire their
+  // Firestore reads in initState() before AuthService.currentUser exists,
+  // hit "User not authenticated", and — for stream-based stats — get stuck
+  // on a permanently-frozen zero value with no retry.
+  bool _demoReady = false;
+
+  // Set if anonymous sign-in itself fails (e.g. Anonymous auth disabled in
+  // Firebase Console). Shown as an always-visible banner so this is
+  // debuggable from the device alone, without needing adb/log access.
+  String? _authErrorMessage;
+
   final _pages = const [
     DemoOverviewScreen(),
     InventoryListScreen(),
@@ -58,8 +70,33 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     final demoModeProvider = Provider.of<DemoModeProvider>(context, listen: false);
     await demoModeProvider.setDemoMode(true);
 
+    // Sign in anonymously if we don't already have an authenticated user.
+    // This gives InventoryService an `isAnonymous` user to key off of, so
+    // reads route to the shared, pre-seeded demo dataset rather than
+    // failing with "User not authenticated".
+    if (AuthService.currentUser == null) {
+      try {
+        await AuthService.signInAnonymously();
+      } catch (e) {
+        // Surface this instead of swallowing it — a failure here (most
+        // commonly: Anonymous sign-in not enabled in Firebase Console under
+        // Authentication > Sign-in method) means every demo screen will
+        // fail with "User not authenticated", which is confusing to debug
+        // without this line pointing at the actual cause.
+        debugPrint('Demo mode anonymous sign-in failed: $e');
+        _authErrorMessage = 'Demo sign-in failed: $e';
+      }
+    }
+
     // Start the demo session timer
     await DemoService.startSession();
+
+    // Only now let the demo pages mount and fire their Firestore reads —
+    // AuthService.currentUser is guaranteed to be set (or sign-in genuinely
+    // failed, in which case the pages' own error states will show).
+    if (mounted) {
+      setState(() => _demoReady = true);
+    }
   }
 
   void _startSessionTimer() {
@@ -159,9 +196,29 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     );
   }
 
+  Widget _buildAuthErrorBanner() {
+    if (_authErrorMessage == null) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      color: Colors.red.shade900,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Text(
+        _authErrorMessage!,
+        style: const TextStyle(color: Colors.white, fontSize: 12),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
+
+    if (!_demoReady) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundOf(brightness),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -181,6 +238,7 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
                   child: Column(
                     children: [
                       DemoTopBar(title: demoNavItems[_selectedIndex].label),
+                      _buildAuthErrorBanner(),
                       Expanded(
                         child: IndexedStack(index: _selectedIndex, children: _pages),
                       ),
@@ -207,7 +265,12 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
             title: demoNavItems[_selectedIndex].label,
             onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
           ),
-          body: IndexedStack(index: _selectedIndex, children: _pages),
+          body: Column(
+            children: [
+              _buildAuthErrorBanner(),
+              Expanded(child: IndexedStack(index: _selectedIndex, children: _pages)),
+            ],
+          ),
         );
       },
     );

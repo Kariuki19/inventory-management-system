@@ -17,7 +17,11 @@ migrate_working_dir/
 *.ipr
 *.iws
 .idea/
-inventory-sys-974aa-firebase-adminsdk-fbsvc-d5bec0279a.json
+seeding/serviceAccountKey.json
+seeding/node_modules/
+
+
+
 
 
 # The .vscode folder contains launch configuration and tasks you configure in

@@ -45,6 +45,13 @@ class InventoryService {
   static const String _predictionsCollection = 'stock_predictions';
   static const String _categoriesCollection = 'categories';
 
+  // Fixed, reserved "users" doc ID that holds the single shared, pre-seeded
+  // demo dataset every public/anonymous trial user reads from. This is not a
+  // real Firebase Auth account — it's just a namespace under `users/` that
+  // the seed script writes to via the Admin SDK. See firestore.rules for the
+  // matching read-only rule.
+  static const String _sharedDemoAdminUid = 'demo_admin_seed';
+
   // Helper to get user-specific collection reference
   static CollectionReference _getCollection(String collectionName) {
     if (AuthService.currentUser == null) {
@@ -53,6 +60,17 @@ class InventoryService {
 
     // Get the appropriate collection name based on demo mode
     final actualCollectionName = _getCollectionName(collectionName);
+
+    // Public/anonymous trial users always read the one shared, pre-seeded
+    // demo dataset — never their own (empty) subcollection. This is distinct
+    // from a real admin's personal "Demo Mode" sandbox toggle below, which
+    // still reads/writes under their own adminUid.
+    if (AuthService.currentUser!.isAnonymous) {
+      return _firestore
+          .collection('users')
+          .doc(_sharedDemoAdminUid)
+          .collection(actualCollectionName);
+    }
 
     // For multi-role support: Staff should use their Admin's UID for data access
     final adminUid = AuthService.currentUser?.adminUid;
@@ -992,13 +1010,10 @@ class InventoryService {
         }
       });
     } catch (e) {
-      return Stream.value({
-        'totalItems': 0,
-        'totalValue': 0.0,
-        'lowStockItems': 0,
-        'outOfStockItems': 0,
-        'itemsNeedingRestock': 0,
-      });
+      // Surfaced as a real stream error (instead of a silently frozen zero
+      // value) so the UI can show what actually went wrong — e.g.
+      // "User not authenticated" if anonymous sign-in failed.
+      return Stream.error(InventoryException('Failed to load dashboard stats: $e'));
     }
   }
 
@@ -1050,7 +1065,9 @@ class InventoryService {
         }
       });
     } catch (e) {
-      return Stream.value({});
+      // Surfaced as a real stream error instead of a silently frozen empty
+      // value, so the UI can show what actually went wrong.
+      return Stream.error(InventoryException('Failed to load category stats: $e'));
     }
   }
 

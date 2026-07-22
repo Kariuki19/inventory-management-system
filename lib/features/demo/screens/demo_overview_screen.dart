@@ -100,6 +100,15 @@ class _DemoOverviewScreenState extends State<DemoOverviewScreen> {
     return StreamBuilder<Map<String, dynamic>>(
       stream: _statsStream,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+            child: Text(
+              'Couldn\'t load stats: ${snapshot.error}',
+              style: AppTextStyles.bodyRegular(color: AppColors.danger),
+            ),
+          );
+        }
         final stats = snapshot.data;
         final totalItems = (stats?['totalItems'] ?? 0) as int;
         final totalValue = (stats?['totalValue'] ?? 0.0) as double;
@@ -160,6 +169,9 @@ class _DemoOverviewScreenState extends State<DemoOverviewScreen> {
     return FutureBuilder<List<InventoryItem>>(
       future: _itemsFuture,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Center(child: Text('Couldn\'t load stock levels'));
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -270,6 +282,9 @@ class _DemoOverviewScreenState extends State<DemoOverviewScreen> {
     return FutureBuilder<List<InventoryItem>>(
       future: _itemsFuture,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Center(child: Text('Couldn\'t load stock alerts'));
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -352,6 +367,15 @@ class _DemoOverviewScreenState extends State<DemoOverviewScreen> {
     return StreamBuilder<Map<String, int>>(
       stream: _categoryStream,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+            child: Text(
+              'Couldn\'t load categories: ${snapshot.error}',
+              style: AppTextStyles.bodyRegular(color: AppColors.danger),
+            ),
+          );
+        }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
