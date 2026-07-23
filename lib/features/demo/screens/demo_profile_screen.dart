@@ -7,6 +7,8 @@ import '../../auth/services/auth_service.dart';
 import '../../auth/models/user_model.dart';
 import '../../../core/providers/demo_mode_provider.dart';
 import '../../../screens/demo_exited_screen.dart';
+import 'package:provider/provider.dart';
+import '../../../core/providers/demo_mode_provider.dart';
 
 /// A sandboxed stand-in for [ProfileScreen] used inside the interactive demo.
 ///
@@ -344,10 +346,18 @@ class DemoProfileScreen extends StatelessWidget {
     );
   }
 
-  void _goToSignUp(BuildContext context) {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const WidgetTree()),
-      (route) => false,
-    );
+  void _goToSignUp(BuildContext context) async {
+    final demoModeProvider = Provider.of<DemoModeProvider>(context, listen: false);
+    
+    await AuthService.signOut();
+
+    await demoModeProvider.setDemoMode(false);
+
+    if (context.mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const WidgetTree()),
+        (route) => false,
+      );
+    }
   }
 }

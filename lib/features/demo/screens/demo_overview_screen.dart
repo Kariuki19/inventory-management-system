@@ -50,7 +50,7 @@ class _DemoOverviewScreenState extends State<DemoOverviewScreen> {
               builder: (context, constraints) {
                 final stacked = constraints.maxWidth < 860;
                 final chart = _SectionCard(
-                  title: 'Stock Levels by Item',
+                  title: 'Stock Levels by category',
                   child: SizedBox(height: 280, child: _buildStockLevelsChart()),
                 );
                 final alerts = _SectionCard(
@@ -160,111 +160,33 @@ class _DemoOverviewScreenState extends State<DemoOverviewScreen> {
     );
   }
 
-  Widget _buildStockLevelsChart() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 640;
-        
-        return FutureBuilder<List<InventoryItem>>(
-          future: _itemsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return const Center(child: Text('Couldn\'t load stock levels'));
-            }
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final items = snapshot.data!.take(8).toList();
-            if (items.isEmpty) {
-              return const Center(child: Text('No inventory items yet'));
-            }
+ Widget _buildStockLevelsChart() {
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final isMobile = constraints.maxWidth < 640;
 
-            final brightness = Theme.of(context).brightness;
-            final maxQty = items.map((i) => i.quantity).reduce((a, b) => a > b ? a : b);
+      return StreamBuilder<Map<String, int>>(
+        stream: _categoryStream,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text('Couldn\'t load stock levels'));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
 
-            if (isMobile) {
-              // Horizontal Bar Chart for mobile
-              return BarChart(
-                BarChartData(
-                  maxY: (maxQty * 1.25).clamp(10, double.infinity).toDouble(),
-                  alignment: BarChartAlignment.spaceAround,
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    horizontalInterval: (maxQty / 4).clamp(1, double.infinity).toDouble(),
-                    getDrawingHorizontalLine: (value) => FlLine(
-                      color: AppColors.borderOf(brightness),
-                      strokeWidth: 1,
-                    ),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  barTouchData: BarTouchData(
-                    touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: (_) => AppColors.surfaceOf(brightness),
-                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                        final item = items[groupIndex];
-                        return BarTooltipItem(
-                          '${item.name}\n${item.quantity} units',
-                          AppTextStyles.caption(
-                            color: brightness == Brightness.dark
-                                ? AppColors.textPrimaryDark
-                                : AppColors.textPrimary,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 100,
-                        getTitlesWidget: (value, _) {
-                          final index = value.toInt();
-                          if (index < 0 || index >= items.length) return const SizedBox();
-                          final name = items[index].name;
-                          final short = name.length > 12 ? '${name.substring(0, 12)}…' : name;
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(short,
-                                style: AppTextStyles.caption(
-                                  color: brightness == Brightness.dark
-                                      ? AppColors.textMutedDark
-                                      : AppColors.textMuted,
-                                )),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  barGroups: items.asMap().entries.map((entry) {
-                    final item = entry.value;
-                    final color = item.quantity == 0
-                        ? AppColors.danger
-                        : item.quantity <= item.reorderLevel
-                            ? AppColors.warning
-                            : AppColors.success;
-                    return BarChartGroupData(
-                      x: entry.key,
-                      barRods: [
-                        BarChartRodData(
-                          toY: item.quantity.toDouble(),
-                          color: color,
-                          width: 16,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              );
-            }
+          final entries = snapshot.data!.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value));
+          final categories = entries.take(8).toList();
 
-            // Vertical Bar Chart for desktop
+          if (categories.isEmpty) {
+            return const Center(child: Text('No inventory items yet'));
+          }
+
+          final brightness = Theme.of(context).brightness;
+          final maxQty = categories.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+
+          Widget buildChart({required double barWidth, required double reservedSize, required int labelLength}) {
             return BarChart(
               BarChartData(
                 maxY: (maxQty * 1.25).clamp(10, double.infinity).toDouble(),
@@ -283,9 +205,9 @@ class _DemoOverviewScreenState extends State<DemoOverviewScreen> {
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (_) => AppColors.surfaceOf(brightness),
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      final item = items[groupIndex];
+                      final entry = categories[groupIndex];
                       return BarTooltipItem(
-                        '${item.name}\n${item.quantity} units',
+                        '${entry.key}\n${entry.value} units',
                         AppTextStyles.caption(
                           color: brightness == Brightness.dark
                               ? AppColors.textPrimaryDark
@@ -303,39 +225,43 @@ class _DemoOverviewScreenState extends State<DemoOverviewScreen> {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 36,
+                      reservedSize: reservedSize,
                       getTitlesWidget: (value, _) {
                         final index = value.toInt();
-                        if (index < 0 || index >= items.length) return const SizedBox();
-                        final name = items[index].name;
-                        final short = name.length > 8 ? '${name.substring(0, 8)}…' : name;
+                        if (index < 0 || index >= categories.length) return const SizedBox();
+                        final name = categories[index].key;
+                        final maxChars = categories.length > 5 ? 6 : labelLength;
+                        final short = name.length > maxChars
+                            ? '${name.substring(0, maxChars)}…'
+                            : name;
                         return Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: Text(short,
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Transform.rotate(
+                            angle: -0.5, // ~-28 degrees, prevents adjacent labels from touching
+                            child: Text(
+                              short,
                               style: AppTextStyles.caption(
                                 color: brightness == Brightness.dark
                                     ? AppColors.textMutedDark
                                     : AppColors.textMuted,
-                              )),
+                              ).copyWith(fontSize: 10),
+                            ),
+                          ),
                         );
                       },
                     ),
                   ),
                 ),
-                barGroups: items.asMap().entries.map((entry) {
-                  final item = entry.value;
-                  final color = item.quantity == 0
-                      ? AppColors.danger
-                      : item.quantity <= item.reorderLevel
-                          ? AppColors.warning
-                          : AppColors.success;
+                barGroups: categories.asMap().entries.map((mapEntry) {
+                  final entry = mapEntry.value;
+                  final color = AppColors.chartSeries[mapEntry.key % AppColors.chartSeries.length];
                   return BarChartGroupData(
-                    x: entry.key,
+                    x: mapEntry.key,
                     barRods: [
                       BarChartRodData(
-                        toY: item.quantity.toDouble(),
+                        toY: entry.value.toDouble(),
                         color: color,
-                        width: 18,
+                        width: barWidth,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ],
@@ -343,11 +269,16 @@ class _DemoOverviewScreenState extends State<DemoOverviewScreen> {
                 }).toList(),
               ),
             );
-          },
-        );
-      },
-    );
-  }
+          }
+
+          return isMobile
+              ? buildChart(barWidth: 16, reservedSize: 56, labelLength: 8)
+              : buildChart(barWidth: 18, reservedSize: 44, labelLength: 8);
+        },
+      );
+    },
+  );
+}
 
   Widget _buildStockAlerts() {
     return FutureBuilder<List<InventoryItem>>(
