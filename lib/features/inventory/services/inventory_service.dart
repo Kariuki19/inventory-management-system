@@ -11,6 +11,7 @@ import '../../../core/services/notification_service.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/models/user_model.dart';
 import '../../../core/providers/demo_mode_provider.dart';
+import 'package:flutter/foundation.dart';
 
 class InventoryService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -55,34 +56,31 @@ class InventoryService {
   // Helper to get user-specific collection reference
   // Helper to get user-specific collection reference
   static CollectionReference _getCollection(String collectionName) {
-    // Get the appropriate collection name based on demo mode
-    final actualCollectionName = _getCollectionName(collectionName);
+  final actualCollectionName = _getCollectionName(collectionName);
 
-    // 1. If unauthenticated user OR anonymous user, point directly to the shared demo seed data
-    final currentUser = AuthService.currentUser;
-    if (currentUser == null || currentUser.isAnonymous) {
-      return _firestore
-      .collection('users')
-      .doc(_sharedDemoAdminUid)
-      .collection(actualCollectionName);
-    }
-
-    // 2. Multi-role support: Staff/Admin users using their configured Admin UID
-    final adminUid = currentUser.adminUid;
-    if (adminUid == null || adminUid.isEmpty) {
-      // Fallback to current user UID if adminUid is missing
-      return _firestore
-      .collection('users')
-      .doc(currentUser.id)
-      .collection(actualCollectionName);
-    }
-
+  // Demo mode is authoritative — never depends on auth state timing/staleness.
+  if (isDemoMode) {
     return _firestore
-    .collection('users')
-    .doc(adminUid)
-    .collection(actualCollectionName);
+        .collection('users')
+        .doc(_sharedDemoAdminUid)
+        .collection(actualCollectionName);
   }
 
+  final currentUser = AuthService.currentUser;
+  if (currentUser == null || currentUser.isAnonymous) {
+    return _firestore
+        .collection('users')
+        .doc(_sharedDemoAdminUid)
+        .collection(actualCollectionName);
+  }
+
+  final adminUid = currentUser.adminUid;
+  if (adminUid == null || adminUid.isEmpty) {
+    return _firestore.collection('users').doc(currentUser.id).collection(actualCollectionName);
+  }
+
+  return _firestore.collection('users').doc(adminUid).collection(actualCollectionName);
+}
 
 
   // Initialize collections with proper indexes (run per-user if needed)
@@ -967,51 +965,44 @@ class InventoryService {
 
   // Real-time dashboard statistics stream
   static Stream<Map<String, dynamic>> getDashboardStatsStream() {
-    try {
-      return _getCollection(_inventoryCollection)
-          .snapshots()
-          .asyncMap((itemsSnapshot) async {
-        try {
-          final items = itemsSnapshot.docs
-              .map((doc) => InventoryItem.fromDoc(doc))
-              .toList();
+  return _getCollection(_inventoryCollection)
+      .snapshots()
+      .asyncMap((itemsSnapshot) async {
+        final items = itemsSnapshot.docs.map((doc) => InventoryItem.fromDoc(doc)).toList();
+        final totalItems = items.length;
+        final totalValue = items.fold<double>(0, (sum, item) => sum + (item.quantity * item.unitPrice));
+        final lowStockItems = items.where((item) => item.quantity <= item.reorderLevel).length;
+        final outOfStockItems = items.where((item) => item.quantity == 0).length;
 
-          final totalItems = items.length;
-          final totalValue = items.fold<double>(
-              0, (sum, item) => sum + (item.quantity * item.unitPrice));
-          final lowStockItems =
-              items.where((item) => item.quantity <= item.reorderLevel).length;
-          final outOfStockItems =
-              items.where((item) => item.quantity == 0).length;
+        final predictionsSnapshot = await _getCollection(_predictionsCollection)
+            .where('needsRestock', isEqualTo: true)
+            .get();
 
-          final predictionsSnapshot = await _getCollection(_predictionsCollection)
-              .where('needsRestock', isEqualTo: true)
-              .get();
-
-          return {
-            'totalItems': totalItems,
-            'totalValue': totalValue,
-            'lowStockItems': lowStockItems,
-            'outOfStockItems': outOfStockItems,
-            'itemsNeedingRestock': predictionsSnapshot.docs.length,
-          };
-        } catch (e) {
-          return {
-            'totalItems': 0,
-            'totalValue': 0.0,
-            'lowStockItems': 0,
-            'outOfStockItems': 0,
-            'itemsNeedingRestock': 0,
-          };
-        }
-      });
-    } catch (e) {
-      // Surfaced as a real stream error (instead of a silently frozen zero
-      // value) so the UI can show what actually went wrong — e.g.
-      // "User not authenticated" if anonymous sign-in failed.
-      return Stream.error(InventoryException('Failed to load dashboard stats: $e'));
-    }
-  }
+        return <String, dynamic>{
+          'totalItems': totalItems,
+          'totalValue': totalValue,
+          'lowStockItems': lowStockItems,
+          'outOfStockItems': outOfStockItems,
+          'itemsNeedingRestock': predictionsSnapshot.docs.length,
+        };
+      })
+      .handleError((e) {
+        debugPrint('getDashboardStatsStream error: $e');
+      })
+      .transform(
+        StreamTransformer<Map<String, dynamic>, Map<String, dynamic>>.fromHandlers(
+          handleError: (error, stack, sink) {
+            sink.add(<String, dynamic>{
+              'totalItems': 0,
+              'totalValue': 0.0,
+              'lowStockItems': 0,
+              'outOfStockItems': 0,
+              'itemsNeedingRestock': 0,
+            });
+          },
+        ),
+      );
+}
 
   // Get category statistics for dashboard
   static Future<Map<String, int>> getCategoryStats() async {
@@ -1038,34 +1029,26 @@ class InventoryService {
 
   // Real-time category statistics stream
   static Stream<Map<String, int>> getCategoryStatsStream() {
-    try {
-      return _getCollection(_inventoryCollection)
-          .snapshots()
-          .map((itemsSnapshot) {
-        try {
-          final items = itemsSnapshot.docs
-              .map((doc) => InventoryItem.fromDoc(doc))
-              .toList();
-
-          final categoryStats = <String, int>{};
-
-          for (final item in items) {
-            final category = item.category.isNotEmpty ? item.category : 'Other';
-            categoryStats[category] =
-                (categoryStats[category] ?? 0) + item.quantity;
-          }
-
-          return categoryStats;
-        } catch (e) {
-          return {};
+  return _getCollection(_inventoryCollection)
+      .snapshots()
+      .map((itemsSnapshot) {
+        final items = itemsSnapshot.docs.map((doc) => InventoryItem.fromDoc(doc)).toList();
+        final categoryStats = <String, int>{};
+        for (final item in items) {
+          final category = item.category.isNotEmpty ? item.category : 'Other';
+          categoryStats[category] = (categoryStats[category] ?? 0) + item.quantity;
         }
-      });
-    } catch (e) {
-      // Surfaced as a real stream error instead of a silently frozen empty
-      // value, so the UI can show what actually went wrong.
-      return Stream.error(InventoryException('Failed to load category stats: $e'));
-    }
-  }
+        return categoryStats;
+      })
+      .transform(
+        StreamTransformer<Map<String, int>, Map<String, int>>.fromHandlers(
+          handleError: (error, stack, sink) {
+            debugPrint('getCategoryStatsStream error: $error');
+            sink.add({});
+          },
+        ),
+      );
+}
 
   // Categories
   static Future<List<String>> getCategories() async {
