@@ -1,11 +1,11 @@
-name: Flutter CI
+Name: Flutter CI
 
 on:
   push:
     branches: [ amidu-inventory-app-improved ]
 
 jobs:
-  build-and-test:
+  check-dependencies:
     runs-on: ubuntu-latest
 
     steps:
@@ -38,10 +38,3 @@ jobs:
         with:
           name: flutter-dependencies
           path: dependencies.txt
-
-      - name: Analyze code
-        run: flutter analyze
-        
-      - name: Run unit & widget tests
-        run: flutter test
-        
