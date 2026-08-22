@@ -75,7 +75,7 @@ class ConsultationUtils {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Sign up to use our effective, solution-oriented software that will simplify work and amplify your impact',
+                          'Contact us to use our effective, solution-oriented software that will simplify work and amplify your impact',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: const Color(0xFF666666),

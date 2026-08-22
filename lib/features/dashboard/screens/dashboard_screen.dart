@@ -273,7 +273,7 @@ class _TrialCountdownBannerState extends State<_TrialCountdownBanner> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Free trial — $timeLabel remaining',
+                'Demo — $timeLabel remaining',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,

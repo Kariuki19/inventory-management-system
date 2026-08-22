@@ -11,7 +11,7 @@ class UpgradePlanScreen extends StatelessWidget {
     super.key,
     this.title = 'Choose Your Plan',
     this.subtitle =
-        'Unlock full access to Cloudora Inventory Management. No credit card required to start your free trial.',
+        'Unlock full access to StockSense Inventory Management. Contact us to get started with a demo.',
   });
 
   @override

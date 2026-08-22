@@ -18,7 +18,7 @@ class DemoService {
       'demo_session_paused_remaining';
 
   /// Demo duration for guest/anonymous users - Backend should enforce server-side
-  static const Duration guestDemoDuration = Duration(minutes: 5);
+  static const Duration guestDemoDuration = Duration(hours: 1);
 
   /// Generate a unique session token for server-side validation
   /// 

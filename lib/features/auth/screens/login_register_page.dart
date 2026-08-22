@@ -4,13 +4,11 @@ import '../services/auth_service.dart';
 import '../models/user_model.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'widget_tree.dart';
+import '../../onboarding/screens/landing_screen.dart';
 
 class LoginPage extends StatefulWidget {
-  final bool startWithRegister;
-
   const LoginPage({
     super.key,
-    this.startWithRegister = false,
   });
 
   @override
@@ -26,21 +24,13 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
-    isLogin = !widget
-        .startWithRegister; // If startWithRegister is true, show register form
+    isLogin = true; // Always show login form - registration removed
   }
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
-  final TextEditingController _controllerDisplayName = TextEditingController();
-  final TextEditingController _controllerConfirmPassword =
-      TextEditingController();
-
-  UserRole _selectedRole = UserRole.staff;
-  final TextEditingController _controllerInviteCode = TextEditingController();
   bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
 
   Future<void> signInWithEmailAndPassword() async {
     if (!_formKey.currentState!.validate()) return;
@@ -102,52 +92,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> createUserWithEmailAndPassword() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      isLoading = true;
-      errorMessage = ''; // Clear previous error
-    });
-
-    try {
-      final user = await AuthService.createUserWithEmailAndPassword(
-        email: _controllerEmail.text.trim(),
-        password: _controllerPassword.text,
-        displayName: _controllerDisplayName.text.trim(),
-        role: _selectedRole,
-        inviteCode: _selectedRole == UserRole.staff ? _controllerInviteCode.text.trim() : null,
-      );
-
-      if (user != null) {
-        // Navigate to dashboard upon successful registration
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const WidgetTree(),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      // Set error message and ensure it stays visible
-      if (mounted) {
-        setState(() {
-          errorMessage = e.toString().replaceAll('Exception: ', '');
-        });
-
-        // Keep error message visible for at least 3 seconds
-        await Future.delayed(const Duration(seconds: 3));
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -180,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               Text(
-                isLogin ? 'Welcome!' : 'Create your account',
+                'Welcome!',
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   color: Theme.of(context).brightness == Brightness.dark
@@ -203,28 +147,6 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Display Name (only for registration)
-                        if (!isLogin) ...[
-                          TextFormField(
-                            controller: _controllerDisplayName,
-                            decoration: InputDecoration(
-                              labelText: 'Full Name',
-                              prefixIcon: const Icon(Icons.person),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (!isLogin &&
-                                  (value == null || value.isEmpty)) {
-                                return 'Please enter your full name';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-
                         // Email
                         TextFormField(
                           controller: _controllerEmail,
@@ -274,104 +196,10 @@ class _LoginPageState extends State<LoginPage> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your password';
                             }
-                            if (!isLogin && value.length < 6) {
-                              return 'Password must be at least 6 characters';
-                            }
                             return null;
                           },
                         ),
                         const SizedBox(height: 16),
-
-                        // Role Selection (only for registration)
-                        if (!isLogin) ...[
-                          const SizedBox(height: 16),
-                          Text(
-                            'Sign up as:',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Theme.of(context).brightness == Brightness.dark
-                                  ? Colors.white70
-                                  : Colors.grey[700],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: RadioListTile<UserRole>(
-                                  title: const Text('Owner'),
-                                  value: UserRole.admin,
-                                  groupValue: _selectedRole,
-                                  onChanged: (value) => setState(() => _selectedRole = value!),
-                                  contentPadding: EdgeInsets.zero,
-                                  dense: true,
-                                ),
-                              ),
-                              Expanded(
-                                child: RadioListTile<UserRole>(
-                                  title: const Text('Staff'),
-                                  value: UserRole.staff,
-                                  groupValue: _selectedRole,
-                                  onChanged: (value) => setState(() => _selectedRole = value!),
-                                  contentPadding: EdgeInsets.zero,
-                                  dense: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (_selectedRole == UserRole.staff) ...[
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _controllerInviteCode,
-                              decoration: InputDecoration(
-                                labelText: 'Invite Code (Organization ID)',
-                                prefixIcon: const Icon(Icons.business),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (!isLogin && _selectedRole == UserRole.staff && (value == null || value.isEmpty)) {
-                                  return 'Please enter the invite code from your admin';
-                                }
-                                return null;
-                              },
-                            ),
-                          ],
-                          const SizedBox(height: 16),
-                        ],
-
-                        // Confirm Password (only for registration)
-                        if (!isLogin) ...[
-                          TextFormField(
-                            controller: _controllerConfirmPassword,
-                            obscureText: _obscureConfirmPassword,
-                            decoration: InputDecoration(
-                              labelText: 'Confirm Password',
-                              prefixIcon: const Icon(Icons.lock),
-                              suffixIcon: IconButton(
-                                icon: Icon(_obscureConfirmPassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off),
-                                onPressed: () => setState(() =>
-                                    _obscureConfirmPassword =
-                                        !_obscureConfirmPassword),
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (!isLogin &&
-                                  value != _controllerPassword.text) {
-                                return 'Passwords do not match';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                        ],
 
                         // Success Message
                         if (successMessage != null &&
@@ -433,9 +261,7 @@ class _LoginPageState extends State<LoginPage> {
                         ElevatedButton(
                           onPressed: isLoading
                               ? null
-                              : (isLogin
-                                  ? signInWithEmailAndPassword
-                                  : createUserWithEmailAndPassword),
+                              : signInWithEmailAndPassword,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
@@ -450,7 +276,7 @@ class _LoginPageState extends State<LoginPage> {
                                       CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : Text(
-                                  isLogin ? 'Sign In' : 'Create Account',
+                                  'Sign In',
                                   style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold),
@@ -459,38 +285,39 @@ class _LoginPageState extends State<LoginPage> {
 
                         const SizedBox(height: 16),
 
-                        // Forgot Password (only for login)
-                        if (isLogin) ...[
-                          TextButton(
-                            onPressed: _showForgotPasswordDialog,
-                            child: Text(
-                              'Forgot Password?',
-                              style: GoogleFonts.poppins(
-                                color: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white70
-                                    : Colors.grey[700],
-                                fontWeight: FontWeight.w500,
-                              ),
+                        // Forgot Password
+                        TextButton(
+                          onPressed: _showForgotPasswordDialog,
+                          child: Text(
+                            'Forgot Password?',
+                            style: GoogleFonts.poppins(
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white70
+                                  : Colors.grey[700],
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(height: 8),
-                        ],
+                        ),
+                        const SizedBox(height: 8),
 
-                        // Toggle Login/Register
+                        // Contact CTA
                         TextButton(
                           onPressed: () {
-                            setState(() {
-                              isLogin = !isLogin;
-                              errorMessage = '';
-                              successMessage = '';
-                              _formKey.currentState?.reset();
-                            });
+                            // Navigate to landing page for contact form
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (context) => const LandingScreen()),
+                              (route) => false,
+                            );
                           },
                           child: Text(
-                            isLogin
-                                ? "Don't have an account? Create one"
-                                : 'Already have an account? Sign in',
+                            "Don't have an account? Get started",
+                            style: GoogleFonts.poppins(
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white70
+                                  : Colors.grey[700],
+                            ),
                           ),
                         ),
                       ],

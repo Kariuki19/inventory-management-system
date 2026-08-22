@@ -469,7 +469,7 @@ class _LandingScreenState extends State<LandingScreen>
 
         const SizedBox(height: 32),
 
-        // Free Trial Button
+        // Demo Button
         Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -1148,9 +1148,9 @@ class _LandingScreenState extends State<LandingScreen>
               context,
               step: 1,
               icon: Icons.login,
-              title: 'Sign Up / Sign In',
+              title: 'Get Started',
               description:
-                  'Create your account or log in to access your dashboard.',
+                  'Contact us to schedule a demo and get started with StockSense.',
               isDarkMode: isDarkMode,
             ),
             _buildGuideStep(

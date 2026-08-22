@@ -61,7 +61,7 @@ class _DemoCountdownBannerState extends State<DemoCountdownBanner> {
 
   @override
   Widget build(BuildContext context) {
-    final isUrgent = _remaining.inMinutes < 5 && _remaining > Duration.zero;
+    final isUrgent = _remaining.inMinutes < 15 && _remaining > Duration.zero;
     final bgColor = isUrgent ? Colors.red.shade700 : widget.backgroundColor;
 
     return Container(

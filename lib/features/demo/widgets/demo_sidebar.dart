@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/consultation_utils.dart';
 import '../../../screens/demo_exited_screen.dart';
-import '../../auth/screens/widget_tree.dart';
 import '../../inventory/services/demo_service.dart';
 
 class DemoNavItem {
@@ -221,7 +221,7 @@ class _DemoSidebarState extends State<DemoSidebar> {
                               Icon(
                                 Icons.timer_outlined,
                                 size: 12,
-                                color: _remaining.inMinutes < 5
+                                color: _remaining.inMinutes < 15
                                     ? AppColors.danger
                                     : (isDark
                                         ? AppColors.primaryLight
@@ -233,7 +233,7 @@ class _DemoSidebarState extends State<DemoSidebar> {
                                 style: GoogleFonts.robotoMono(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: _remaining.inMinutes < 5
+                                  color: _remaining.inMinutes < 15
                                       ? AppColors.danger
                                       : (isDark
                                           ? AppColors.primaryLight
@@ -252,10 +252,7 @@ class _DemoSidebarState extends State<DemoSidebar> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const WidgetTree()),
-                      (route) => false,
-                    ),
+                    onPressed: () => ConsultationUtils.showConsultationDialog(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
@@ -265,7 +262,7 @@ class _DemoSidebarState extends State<DemoSidebar> {
                         borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
                     ),
-                    child: Text('Sign Up Free', style: AppTextStyles.buttonLabel()),
+                    child: Text('Get started', style: AppTextStyles.buttonLabel()),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),

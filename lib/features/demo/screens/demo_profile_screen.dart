@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../help/screens/help_support_screen.dart';
-import '../../auth/screens/widget_tree.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/models/user_model.dart';
 import '../../../core/providers/demo_mode_provider.dart';
+import '../../../core/utils/consultation_utils.dart';
 import '../../../screens/demo_exited_screen.dart';
-import 'package:provider/provider.dart';
-import '../../../core/providers/demo_mode_provider.dart';
 
 /// A sandboxed stand-in for [ProfileScreen] used inside the interactive demo.
 ///
@@ -277,10 +275,10 @@ class DemoProfileScreen extends StatelessWidget {
       onTap: () {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$title is disabled in the demo — sign up to manage your real account.'),
+            content: Text('$title is disabled in the demo — contact us to get started.'),
             action: SnackBarAction(
-              label: 'Sign Up',
-              onPressed: () => _goToSignUp(context),
+              label: 'Get started',
+              onPressed: () => ConsultationUtils.showConsultationDialog(context),
             ),
           ),
         );
@@ -308,21 +306,21 @@ class DemoProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Create a free account to keep your own inventory, invite staff, and get real stock alerts.',
+              'Contact us to get started with your own inventory, invite staff, and get real stock alerts.',
               style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey[600]),
             ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => _goToSignUp(context),
+                onPressed: () => ConsultationUtils.showConsultationDialog(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).primaryColor,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
                 child: Text(
-                  'Create Free Account',
+                  'Get started',
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white),
                 ),
               ),
@@ -346,18 +344,4 @@ class DemoProfileScreen extends StatelessWidget {
     );
   }
 
-  void _goToSignUp(BuildContext context) async {
-    final demoModeProvider = Provider.of<DemoModeProvider>(context, listen: false);
-    
-    await AuthService.signOut();
-
-    await demoModeProvider.setDemoMode(false);
-
-    if (context.mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const WidgetTree()),
-        (route) => false,
-      );
-    }
-  }
 }

@@ -41,7 +41,7 @@ class TrialService {
     return remaining.inDays;
   }
 
-  /// Exact time remaining in the authenticated free trial.
+  /// Exact time remaining in the authenticated demo period.
   static Future<Duration> getRemainingDuration() async {
     final firstLaunch = await getFirstLaunchDate();
     final expiry = firstLaunch.add(const Duration(days: trialDurationDays));
