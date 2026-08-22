@@ -30,6 +30,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
   final _descriptionController = TextEditingController();
   final _categoryController = TextEditingController();
   final _quantityController = TextEditingController();
+  final _unitController = TextEditingController(text: 'Units');
   final _unitPriceController = TextEditingController();
   final _supplierController = TextEditingController();
   final _reorderLevelController = TextEditingController();
@@ -65,6 +66,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     _categoryController.text = item.category;
     _selectedCategory = item.category;
     _quantityController.text = item.quantity.toString();
+    _unitController.text = item.unit;
     // Format currency for display
     _unitPriceController.text = _currencyFormat.format(item.unitPrice);
     // _unitPriceController.text = item.unitPrice.toString();
@@ -797,7 +799,6 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
 
           if (uploadedUrl != null) {
             finalImageUrl = uploadedUrl;
-
           } else {
             throw Exception('Failed to upload image - no URL returned');
           }
@@ -811,7 +812,6 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
       } else if (_imageUrlController.text.trim().isNotEmpty) {
         // Use existing URL (for editing existing items)
         finalImageUrl = _imageUrlController.text.trim();
-
       }
 
       final item = InventoryItem(
@@ -820,6 +820,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
         description: _descriptionController.text.trim(),
         category: _selectedCategory ?? _categoryController.text.trim(),
         quantity: int.parse(_quantityController.text),
+        unit: _unitController.text.trim(),
         unitPrice: unitPrice,
         supplier: _supplierController.text.trim(),
         createdAt: widget.item?.createdAt ?? now,
@@ -1113,7 +1114,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                                         Expanded(
                                           child: _buildAnimatedTextFormField(
                                             controller: _unitPriceController,
-                                            label: 'Unit Price (\$)',
+                                            label: 'Unit Price (KSh)',
                                             icon: Icons.attach_money,
                                             keyboardType: const TextInputType
                                                 .numberWithOptions(
@@ -1169,7 +1170,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                                             height: isSmallScreen ? 12 : 16),
                                         _buildAnimatedTextFormField(
                                           controller: _unitPriceController,
-                                          label: 'Unit Price (\$)',
+                                          label: 'Unit Price (KSh)',
                                           icon: Icons.attach_money,
                                           keyboardType: const TextInputType
                                               .numberWithOptions(decimal: true),
@@ -1192,6 +1193,20 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                                         ),
                                       ],
                                     ),
+                                  SizedBox(height: isSmallScreen ? 12 : 16),
+                                  _buildAnimatedTextFormField(
+                                    controller: _unitController,
+                                    label: 'Unit (e.g. pieces, kg)',
+                                    icon: Icons.straighten,
+                                    isSmallScreen: isSmallScreen,
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Please enter a unit';
+                                      }
+                                      return null;
+                                    },
+                                  ),
                                   SizedBox(height: isSmallScreen ? 12 : 16),
                                   _buildAnimatedTextFormField(
                                     controller: _supplierController,
@@ -1814,6 +1829,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     _descriptionController.dispose();
     _categoryController.dispose();
     _quantityController.dispose();
+    _unitController.dispose();
     _unitPriceController.dispose();
     _supplierController.dispose();
     _reorderLevelController.dispose();

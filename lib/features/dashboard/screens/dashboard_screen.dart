@@ -27,6 +27,7 @@ import '../../../core/utils/date_utils.dart' as CustomDateUtils;
 import '../../inventory/screens/inventory_form_screen.dart';
 import '../../inventory/screens/qr_scanner_screen.dart';
 import '../../expiry/screens/expiry_alerts_screen.dart';
+import '../../reports/widgets/report_download_sheet.dart';
 
 class DashboardScreen extends StatefulWidget {
   final ValueChanged<int> onTabSelected;
@@ -245,9 +246,8 @@ class _TrialCountdownBannerState extends State<_TrialCountdownBanner> {
         ? const Color(0xFFFF4D4D).withValues(alpha: 0.1)
         : const Color(0xFFFF6B00).withValues(alpha: 0.1);
 
-    final textColor = isWarning
-        ? const Color(0xFFFF4D4D)
-        : const Color(0xFFFF6B00);
+    final textColor =
+        isWarning ? const Color(0xFFFF4D4D) : const Color(0xFFFF6B00);
 
     final timeLabel = daysLeft >= 1
         ? '$daysLeft day${daysLeft == 1 ? '' : 's'}'
@@ -726,7 +726,6 @@ extension _DashboardScreenStateExtension on _DashboardScreenState {
           ),
         ),
         const SizedBox(height: 12),
-
         LayoutBuilder(
           builder: (context, constraints) {
             // Create list of all quick actions
@@ -745,6 +744,12 @@ extension _DashboardScreenStateExtension on _DashboardScreenState {
                 Icons.history,
                 Colors.orange,
                 () => widget.onTabSelected(2),
+              ),
+              _buildQuickActionButton(
+                'Download Report',
+                Icons.download_outlined,
+                Colors.teal,
+                () => ReportDownloadSheet.show(context),
               ),
             ]);
 
@@ -1176,8 +1181,7 @@ extension _DashboardScreenStateExtension on _DashboardScreenState {
                       child: Text(
                         'Error loading items',
                         style: GoogleFonts.poppins(
-                          color:
-                              isDark ? Colors.white60 : Colors.grey.shade600,
+                          color: isDark ? Colors.white60 : Colors.grey.shade600,
                         ),
                       ),
                     );
@@ -1190,8 +1194,7 @@ extension _DashboardScreenStateExtension on _DashboardScreenState {
                       child: Text(
                         'No items found',
                         style: GoogleFonts.poppins(
-                          color:
-                              isDark ? Colors.white60 : Colors.grey.shade600,
+                          color: isDark ? Colors.white60 : Colors.grey.shade600,
                         ),
                       ),
                     );
@@ -1207,8 +1210,9 @@ extension _DashboardScreenStateExtension on _DashboardScreenState {
                         final item = items[index];
                         final daysUntilExpiry = item.daysUntilExpiry ?? 0;
                         final statusColor = _getExpiryColor(daysUntilExpiry);
-                        final statusText = CustomDateUtils.DateUtils
-                            .formatExpiryStatus(daysUntilExpiry);
+                        final statusText =
+                            CustomDateUtils.DateUtils.formatExpiryStatus(
+                                daysUntilExpiry);
 
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -1343,7 +1347,8 @@ extension _DashboardScreenStateExtension on _DashboardScreenState {
         const SizedBox(height: 12),
         Card(
           elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: SizedBox(height: 280, child: _buildCategoryBarChart()),
@@ -1365,7 +1370,8 @@ extension _DashboardScreenStateExtension on _DashboardScreenState {
         const SizedBox(height: 12),
         Card(
           elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: SizedBox(
@@ -1392,7 +1398,8 @@ extension _DashboardScreenStateExtension on _DashboardScreenState {
         const SizedBox(height: 12),
         Card(
           elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: _buildStockStatusBreakdown(),
@@ -1403,201 +1410,207 @@ extension _DashboardScreenStateExtension on _DashboardScreenState {
   }
 
   Widget _buildCategoryBarChart() {
-  return LayoutBuilder(
-    builder: (context, constraints) {
-      final isMobile = constraints.maxWidth < 640;
-      final isDark = Theme.of(context).brightness == Brightness.dark;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 640;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
 
-      return StreamBuilder<Map<String, int>>(
-        stream: _categoryStatsStream,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return const Center(child: Text('Couldn\'t load category data'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No inventory items yet'));
-          }
+        return StreamBuilder<Map<String, int>>(
+          stream: _categoryStatsStream,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return const Center(child: Text('Couldn\'t load category data'));
+            }
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('No inventory items yet'));
+            }
 
-          final colors = _generateCategoryColors(snapshot.data!.length);
-          final entries = snapshot.data!.entries.toList()
-            ..sort((a, b) => b.value.compareTo(a.value));
-          final categories = entries.take(8).toList();
-          final maxQty =
-              categories.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+            final colors = _generateCategoryColors(snapshot.data!.length);
+            final entries = snapshot.data!.entries.toList()
+              ..sort((a, b) => b.value.compareTo(a.value));
+            final categories = entries.take(8).toList();
+            final maxQty =
+                categories.map((e) => e.value).reduce((a, b) => a > b ? a : b);
 
-          return BarChart(
-            BarChartData(
-              maxY: (maxQty * 1.25).clamp(10, double.infinity).toDouble(),
-              alignment: BarChartAlignment.spaceAround,
-              gridData: FlGridData(
-                show: true,
-                drawVerticalLine: false,
-                horizontalInterval:
-                    (maxQty / 4).clamp(1, double.infinity).toDouble(),
-                getDrawingHorizontalLine: (value) => FlLine(
-                  color: isDark ? Colors.white12 : Colors.grey[300]!,
-                  strokeWidth: 1,
+            return BarChart(
+              BarChartData(
+                maxY: (maxQty * 1.25).clamp(10, double.infinity).toDouble(),
+                alignment: BarChartAlignment.spaceAround,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  horizontalInterval:
+                      (maxQty / 4).clamp(1, double.infinity).toDouble(),
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: isDark ? Colors.white12 : Colors.grey[300]!,
+                    strokeWidth: 1,
+                  ),
                 ),
-              ),
-              borderData: FlBorderData(show: false),
-              barTouchData: BarTouchData(
-                touchTooltipData: BarTouchTooltipData(
-                  getTooltipColor: (_) =>
-                      isDark ? Colors.grey[800]! : Colors.white,
-                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                    final entry = categories[groupIndex];
-                    return BarTooltipItem(
-                      '${entry.key}\n${entry.value} units',
-                      GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.white : Colors.grey[800],
-                      ),
-                    );
-                  },
-                ),
-              ),
-              titlesData: FlTitlesData(
-                show: true,
-                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: isMobile ? 56 : 44,
-                    getTitlesWidget: (value, _) {
-                      final index = value.toInt();
-                      if (index < 0 || index >= categories.length) {
-                        return const SizedBox();
-                      }
-                      final name = categories[index].key;
-                      final maxChars = categories.length > 5 ? 6 : 8;
-                      final short = name.length > maxChars
-                          ? '${name.substring(0, maxChars)}…'
-                          : name;
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Transform.rotate(
-                          angle: -0.5,
-                          child: Text(
-                            short,
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: isDark ? Colors.white60 : Colors.grey[600],
-                            ),
-                          ),
+                borderData: FlBorderData(show: false),
+                barTouchData: BarTouchData(
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipColor: (_) =>
+                        isDark ? Colors.grey[800]! : Colors.white,
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      final entry = categories[groupIndex];
+                      return BarTooltipItem(
+                        '${entry.key}\n${entry.value} units',
+                        GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? Colors.white : Colors.grey[800],
                         ),
                       );
                     },
                   ),
                 ),
+                titlesData: FlTitlesData(
+                  show: true,
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: isMobile ? 56 : 44,
+                      getTitlesWidget: (value, _) {
+                        final index = value.toInt();
+                        if (index < 0 || index >= categories.length) {
+                          return const SizedBox();
+                        }
+                        final name = categories[index].key;
+                        final maxChars = categories.length > 5 ? 6 : 8;
+                        final short = name.length > maxChars
+                            ? '${name.substring(0, maxChars)}…'
+                            : name;
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Transform.rotate(
+                            angle: -0.5,
+                            child: Text(
+                              short,
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color:
+                                    isDark ? Colors.white60 : Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                barGroups: categories.asMap().entries.map((mapEntry) {
+                  final entry = mapEntry.value;
+                  final color = colors[mapEntry.key % colors.length];
+                  return BarChartGroupData(
+                    x: mapEntry.key,
+                    barRods: [
+                      BarChartRodData(
+                        toY: entry.value.toDouble(),
+                        color: color,
+                        width: isMobile ? 16 : 18,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  );
+                }).toList(),
               ),
-              barGroups: categories.asMap().entries.map((mapEntry) {
-                final entry = mapEntry.value;
-                final color = colors[mapEntry.key % colors.length];
-                return BarChartGroupData(
-                  x: mapEntry.key,
-                  barRods: [
-                    BarChartRodData(
-                      toY: entry.value.toDouble(),
-                      color: color,
-                      width: isMobile ? 16 : 18,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildStockStatusBreakdown() {
+    return StreamBuilder<Map<String, dynamic>>(
+      stream: _dashboardStatsStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError || !snapshot.hasData) {
+          return const Center(child: Text('No data available'));
+        }
+
+        final stats = snapshot.data!;
+        final totalItems = stats['totalItems'] as int;
+        final lowStockItems = stats['lowStockItems'] as int;
+        final outOfStockItems = stats['outOfStockItems'] as int;
+        final normalStock =
+            (totalItems - lowStockItems - outOfStockItems).clamp(0, totalItems);
+
+        if (totalItems == 0) {
+          return const Center(child: Text('No inventory items yet'));
+        }
+
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final labels = ['Normal Stock', 'Low Stock', 'Out of Stock'];
+        final values = [normalStock, lowStockItems, outOfStockItems];
+        final rowColors = [Colors.green, Colors.orange, Colors.red];
+        final maxValue =
+            values.reduce((a, b) => a > b ? a : b).clamp(1, totalItems);
+
+        return Column(
+          children: List.generate(labels.length, (i) {
+            final ratio = maxValue == 0 ? 0.0 : values[i] / maxValue;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 100,
+                    child: Text(
+                      labels[i],
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: isDark ? Colors.white70 : Colors.grey[700],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Expanded(
+                    child: ClipRRect(
                       borderRadius: BorderRadius.circular(4),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
-          );
-        },
-      );
-    },
-  );
-}
-
-Widget _buildStockStatusBreakdown() {
-  return StreamBuilder<Map<String, dynamic>>(
-    stream: _dashboardStatsStream,
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (snapshot.hasError || !snapshot.hasData) {
-        return const Center(child: Text('No data available'));
-      }
-
-      final stats = snapshot.data!;
-      final totalItems = stats['totalItems'] as int;
-      final lowStockItems = stats['lowStockItems'] as int;
-      final outOfStockItems = stats['outOfStockItems'] as int;
-      final normalStock =
-          (totalItems - lowStockItems - outOfStockItems).clamp(0, totalItems);
-
-      if (totalItems == 0) {
-        return const Center(child: Text('No inventory items yet'));
-      }
-
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      final labels = ['Normal Stock', 'Low Stock', 'Out of Stock'];
-      final values = [normalStock, lowStockItems, outOfStockItems];
-      final rowColors = [Colors.green, Colors.orange, Colors.red];
-      final maxValue = values.reduce((a, b) => a > b ? a : b).clamp(1, totalItems);
-
-      return Column(
-        children: List.generate(labels.length, (i) {
-          final ratio = maxValue == 0 ? 0.0 : values[i] / maxValue;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 100,
-                  child: Text(
-                    labels[i],
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: isDark ? Colors.white70 : Colors.grey[700],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: ratio,
-                      minHeight: 8,
-                      backgroundColor: isDark ? Colors.white12 : Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation(rowColors[i]),
+                      child: LinearProgressIndicator(
+                        value: ratio,
+                        minHeight: 8,
+                        backgroundColor:
+                            isDark ? Colors.white12 : Colors.grey[200],
+                        valueColor: AlwaysStoppedAnimation(rowColors[i]),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 32,
-                  child: Text(
-                    '${values[i]}',
-                    textAlign: TextAlign.right,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.white : Colors.grey[800],
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 32,
+                    child: Text(
+                      '${values[i]}',
+                      textAlign: TextAlign.right,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.grey[800],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        }),
-      );
-    },
-  );
-}
+                ],
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
 
   Widget _buildStockChart() {
     return StreamBuilder<Map<String, dynamic>>(

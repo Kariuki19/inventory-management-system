@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class InventoryItem {
-  
   final String id;
   final String name;
   final String description;
@@ -12,6 +11,7 @@ class InventoryItem {
   final DateTime createdAt;
   final DateTime updatedAt;
   final int reorderLevel;
+  final String unit;
   final String? imageUrl;
   final DateTime? expiryDate;
   final bool isPerishable;
@@ -29,13 +29,12 @@ class InventoryItem {
     required this.createdAt,
     required this.updatedAt,
     required this.reorderLevel,
+    this.unit = 'Units',
     this.imageUrl,
     this.expiryDate,
     this.isPerishable = false,
     this.snapshot,
   });
-
-  
 
   factory InventoryItem.fromDoc(DocumentSnapshot doc) {
     final map = doc.data() as Map<String, dynamic>;
@@ -59,9 +58,10 @@ class InventoryItem {
       updatedAt: parseDate(map['updatedAt']) ?? DateTime.now(),
       expiryDate: parseDate(map['expiryDate']),
       reorderLevel: map['reorderLevel'] ?? 10,
+      unit: map['unit'] ?? 'Units',
       imageUrl: map['imageUrl'],
       isPerishable: map['isPerishable'] ?? false,
-      snapshot: doc, 
+      snapshot: doc,
     );
   }
 
@@ -85,6 +85,7 @@ class InventoryItem {
       updatedAt: parseDate(map['updatedAt']) ?? DateTime.now(),
       expiryDate: parseDate(map['expiryDate']),
       reorderLevel: map['reorderLevel'] ?? 10,
+      unit: map['unit'] ?? 'Units',
       imageUrl: map['imageUrl'],
       isPerishable: map['isPerishable'] ?? false,
     );
@@ -101,6 +102,7 @@ class InventoryItem {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'reorderLevel': reorderLevel,
+      'unit': unit,
       'imageUrl': imageUrl,
       'expiryDate': expiryDate?.toIso8601String(),
       'isPerishable': isPerishable,
@@ -119,6 +121,7 @@ class InventoryItem {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'reorderLevel': reorderLevel,
+      'unit': unit,
       'imageUrl': imageUrl,
       'expiryDate': expiryDate?.toIso8601String(),
       'isPerishable': isPerishable,
@@ -141,6 +144,7 @@ class InventoryItem {
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
       reorderLevel: json['reorderLevel'] ?? 10,
+      unit: json['unit'] ?? 'Units',
       imageUrl: json['imageUrl'],
       expiryDate: json['expiryDate'] != null
           ? DateTime.parse(json['expiryDate'])
@@ -160,6 +164,7 @@ class InventoryItem {
     DateTime? createdAt,
     DateTime? updatedAt,
     int? reorderLevel,
+    String? unit,
     String? imageUrl,
     DateTime? expiryDate,
     bool? isPerishable,
@@ -176,6 +181,7 @@ class InventoryItem {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       reorderLevel: reorderLevel ?? this.reorderLevel,
+      unit: unit ?? this.unit,
       imageUrl: imageUrl ?? this.imageUrl,
       expiryDate: expiryDate ?? this.expiryDate,
       isPerishable: isPerishable ?? this.isPerishable,
@@ -204,4 +210,3 @@ class InventoryItem {
     return expiryDate!.difference(DateTime.now()).inDays;
   }
 }
-
