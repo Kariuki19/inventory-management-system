@@ -268,7 +268,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<UserRole?>(
-                        initialValue: _selectedRoleFilter,
+                        value: _selectedRoleFilter,
                         decoration: InputDecoration(
                           labelText: 'Filter by Role',
                           border: OutlineInputBorder(
@@ -301,7 +301,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: DropdownButtonFormField<bool?>(
-                        initialValue: _selectedStatusFilter,
+                        value: _selectedStatusFilter,
                         decoration: InputDecoration(
                           labelText: 'Filter by Status',
                           border: OutlineInputBorder(
@@ -723,7 +723,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<UserRole>(
-                  initialValue: selectedRole,
+                  value: selectedRole,
                   decoration: InputDecoration(
                     labelText: 'Role',
                     prefixIcon: const Icon(Icons.admin_panel_settings),
@@ -851,7 +851,7 @@ class _AdminUserManagementScreenState extends State<AdminUserManagementScreen> {
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<UserRole>(
-                    initialValue: selectedRole,
+                    value: selectedRole,
                     decoration: InputDecoration(
                       labelText: 'Role',
                       prefixIcon: const Icon(Icons.admin_panel_settings),

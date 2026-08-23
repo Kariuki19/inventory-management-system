@@ -30,6 +30,8 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _controllerEmail = TextEditingController();
   final TextEditingController _controllerPassword = TextEditingController();
+  final TextEditingController _controllerDisplayName = TextEditingController();
+  final TextEditingController _controllerConfirmPassword = TextEditingController();
   bool _obscurePassword = true;
 
   Future<void> signInWithEmailAndPassword() async {

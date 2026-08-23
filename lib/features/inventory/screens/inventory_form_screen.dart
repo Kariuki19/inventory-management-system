@@ -307,7 +307,12 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                       }
                     });
                   },
-                  activeThumbColor: Theme.of(context).primaryColor,
+                  thumbColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.selected)) {
+                      return Theme.of(context).primaryColor;
+                    }
+                    return null;
+                  }),
                 ),
               ),
             ],
@@ -1500,7 +1505,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
           child: Opacity(
             opacity: value,
             child: DropdownButtonFormField<String>(
-              initialValue: _selectedCategory,
+              value: _selectedCategory,
               isExpanded: true, // Prevent overflow
               decoration: InputDecoration(
                 labelText: 'Select Category',
@@ -1590,7 +1595,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
           child: Opacity(
             opacity: value,
             child: DropdownButtonFormField<int>(
-              initialValue:
+              value:
                   reorderLevels.contains(currentValue) ? currentValue : null,
               decoration: InputDecoration(
                 labelText: 'Reorder Level',
