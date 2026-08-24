@@ -8,6 +8,7 @@ class InventoryItem {
   final int quantity;
   final double unitPrice;
   final String supplier;
+  final String barcode;
   final DateTime createdAt;
   final DateTime updatedAt;
   final int reorderLevel;
@@ -26,6 +27,7 @@ class InventoryItem {
     required this.quantity,
     required this.unitPrice,
     required this.supplier,
+    this.barcode = '',
     required this.createdAt,
     required this.updatedAt,
     required this.reorderLevel,
@@ -54,6 +56,7 @@ class InventoryItem {
       quantity: map['quantity'] ?? 0,
       unitPrice: (map['unitPrice'] ?? 0.0).toDouble(),
       supplier: map['supplier'] ?? '',
+      barcode: map['barcode'] ?? '',
       createdAt: parseDate(map['createdAt']) ?? DateTime.now(),
       updatedAt: parseDate(map['updatedAt']) ?? DateTime.now(),
       expiryDate: parseDate(map['expiryDate']),
@@ -81,6 +84,7 @@ class InventoryItem {
       quantity: map['quantity'] ?? 0,
       unitPrice: (map['unitPrice'] ?? 0.0).toDouble(),
       supplier: map['supplier'] ?? '',
+      barcode: map['barcode'] ?? '',
       createdAt: parseDate(map['createdAt']) ?? DateTime.now(),
       updatedAt: parseDate(map['updatedAt']) ?? DateTime.now(),
       expiryDate: parseDate(map['expiryDate']),
@@ -99,6 +103,7 @@ class InventoryItem {
       'quantity': quantity,
       'unitPrice': unitPrice,
       'supplier': supplier,
+      'barcode': barcode,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'reorderLevel': reorderLevel,
@@ -118,6 +123,7 @@ class InventoryItem {
       'quantity': quantity,
       'unitPrice': unitPrice,
       'supplier': supplier,
+      'barcode': barcode,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'reorderLevel': reorderLevel,
@@ -137,6 +143,7 @@ class InventoryItem {
       quantity: json['quantity'] ?? 0,
       unitPrice: (json['unitPrice'] ?? 0.0).toDouble(),
       supplier: json['supplier'] ?? '',
+      barcode: json['barcode'] ?? '',
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
@@ -161,6 +168,7 @@ class InventoryItem {
     int? quantity,
     double? unitPrice,
     String? supplier,
+    String? barcode,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? reorderLevel,
@@ -178,6 +186,7 @@ class InventoryItem {
       quantity: quantity ?? this.quantity,
       unitPrice: unitPrice ?? this.unitPrice,
       supplier: supplier ?? this.supplier,
+      barcode: barcode ?? this.barcode,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       reorderLevel: reorderLevel ?? this.reorderLevel,

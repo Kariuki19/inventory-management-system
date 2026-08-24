@@ -3,10 +3,12 @@ import 'dart:math';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../services/inventory_service.dart';
+import '../services/barcode_service.dart';
 import '../../auth/services/auth_service.dart';
 import '../models/inventory_item.dart';
 import '../../auth/models/user_model.dart';
@@ -523,6 +525,17 @@ class _InventoryListScreenState extends State<InventoryListScreen>
                   },
                 ),
                 const SizedBox(height: 12),
+                if (currentUser?.isAdmin == true)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: OutlinedButton.icon(
+                      onPressed: _scanToAddItem,
+                      icon:
+                          Icon(kIsWeb ? Icons.keyboard : Icons.qr_code_scanner),
+                      label: const Text('Scan to add'),
+                    ),
+                  ),
+                if (currentUser?.isAdmin == true) const SizedBox(height: 12),
 
                 // Category Tabs (with "All" default)
                 if (_tabController != null && categories.isNotEmpty)
@@ -740,6 +753,20 @@ class _InventoryListScreenState extends State<InventoryListScreen>
     // Refresh the list if an item was added/updated
     if (result == true) {
       _refreshItems(); // refresh categories & items
+    }
+  }
+
+  Future<void> _scanToAddItem() async {
+    final barcode = await BarcodeService.getBarcodeValue(context);
+    if (!mounted || barcode == null) return;
+
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => InventoryFormScreen(initialBarcode: barcode),
+      ),
+    );
+    if (result == true && mounted) {
+      _refreshItems();
     }
   }
 

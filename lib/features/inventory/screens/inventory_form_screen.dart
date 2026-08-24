@@ -13,11 +13,13 @@ import 'package:intl/intl.dart'; // Import for currency formatting
 class InventoryFormScreen extends StatefulWidget {
   final InventoryItem? item;
   final bool isEditing;
+  final String? initialBarcode;
 
   const InventoryFormScreen({
     super.key,
     this.item,
     this.isEditing = false,
+    this.initialBarcode,
   });
 
   @override
@@ -33,6 +35,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
   final _unitController = TextEditingController(text: 'Units');
   final _unitPriceController = TextEditingController();
   final _supplierController = TextEditingController();
+  final _barcodeController = TextEditingController();
   final _reorderLevelController = TextEditingController();
   final _imageUrlController = TextEditingController();
 
@@ -57,6 +60,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     if (widget.item != null) {
       _prefillForm();
     }
+    _barcodeController.text = widget.initialBarcode ?? _barcodeController.text;
   }
 
   void _prefillForm() {
@@ -71,6 +75,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     _unitPriceController.text = _currencyFormat.format(item.unitPrice);
     // _unitPriceController.text = item.unitPrice.toString();
     _supplierController.text = item.supplier;
+    _barcodeController.text = item.barcode;
     _reorderLevelController.text = item.reorderLevel.toString();
     _imageUrlController.text = item.imageUrl ?? '';
     _isPerishable = item.isPerishable;
@@ -828,6 +833,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
         unit: _unitController.text.trim(),
         unitPrice: unitPrice,
         supplier: _supplierController.text.trim(),
+        barcode: _barcodeController.text.trim(),
         createdAt: widget.item?.createdAt ?? now,
         updatedAt: now,
         reorderLevel: int.parse(_reorderLevelController.text),
@@ -1227,6 +1233,13 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                                     },
                                   ),
                                   SizedBox(height: isSmallScreen ? 12 : 16),
+                                  _buildAnimatedTextFormField(
+                                    controller: _barcodeController,
+                                    label: 'Barcode / SKU',
+                                    icon: Icons.qr_code,
+                                    isSmallScreen: isSmallScreen,
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 12 : 16),
                                   _buildReorderLevelDropdown(
                                       isSmallScreen: isSmallScreen),
                                 ],
@@ -1595,8 +1608,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
           child: Opacity(
             opacity: value,
             child: DropdownButtonFormField<int>(
-              value:
-                  reorderLevels.contains(currentValue) ? currentValue : null,
+              value: reorderLevels.contains(currentValue) ? currentValue : null,
               decoration: InputDecoration(
                 labelText: 'Reorder Level',
                 prefixIcon: const Icon(Icons.warning),
@@ -1837,6 +1849,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     _unitController.dispose();
     _unitPriceController.dispose();
     _supplierController.dispose();
+    _barcodeController.dispose();
     _reorderLevelController.dispose();
     _imageUrlController.dispose();
     super.dispose();
