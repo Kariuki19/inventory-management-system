@@ -28,6 +28,7 @@ class InventoryService {
   // Broadcast controller to update sandbox UI on updates
   static final StreamController<void> _demoUpdateController =
       StreamController<void>.broadcast();
+  static final List<InventoryItem> _demoSessionItems = [];
 
   // Check if demo mode is active
   static bool get isDemoMode => _demoModeProvider?.isDemoMode ?? false;
@@ -224,16 +225,33 @@ class InventoryService {
       }
 
       final snapshot = await query.get();
-      return snapshot.docs.map((doc) => InventoryItem.fromDoc(doc)).toList();
+      final items = snapshot.docs.map((doc) => InventoryItem.fromDoc(doc)).toList();
+      if (!isDemoMode) return items;
+
+      final sessionItems = _demoSessionItems.where((item) {
+        final matchesCategory = category == null ||
+            category.isEmpty ||
+            category == 'All' ||
+            item.category == category;
+        final matchesSearch = searchQuery == null ||
+            searchQuery.trim().isEmpty ||
+            item.name.toLowerCase().contains(searchQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+      });
+      return [...sessionItems, ...items];
     } catch (e) {
       throw InventoryException('Failed to get inventory items: $e');
     }
   }
 
   static Future<String> addInventoryItem(InventoryItem item) async {
-    // Block write operations in demo mode
-    if (shouldBlockWrite()) {
-      throw InventoryException('Demo Mode is read-only. Action cannot be saved.');
+    if (isDemoMode) {
+      final demoItem = item.copyWith(
+        id: 'demo_session_${DateTime.now().microsecondsSinceEpoch}',
+      );
+      _demoSessionItems.insert(0, demoItem);
+      _demoUpdateController.add(null);
+      return demoItem.id;
     }
 
     try {

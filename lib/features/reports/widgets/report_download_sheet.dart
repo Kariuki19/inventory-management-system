@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../services/report_service.dart';
 
@@ -71,7 +72,11 @@ class ReportDownloadSheet {
       if (context.mounted) {
         Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Report saved to ${download.path}')),
+          SnackBar(
+            content: Text(kIsWeb
+                ? 'Report downloaded to browser downloads'
+                : 'Report saved to ${download.path}'),
+          ),
         );
       }
     } catch (error) {

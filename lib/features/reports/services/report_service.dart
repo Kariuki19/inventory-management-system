@@ -2,17 +2,21 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html show Blob, Url, AnchorElement;
 
 import '../../auth/services/auth_service.dart';
 import '../../inventory/models/inventory_item.dart';
 import '../../inventory/services/inventory_service.dart';
 import '../../predictions/models/stock_prediction.dart';
 import '../../stock/models/stock_movement.dart';
+import '../../../core/providers/demo_mode_provider.dart';
 
 enum ReportFormat { pdf, excel }
 
@@ -34,23 +38,39 @@ class ReportService {
   static final _currencyFormat = NumberFormat('#,##0.00');
 
   static Future<ReportDownload> generateAndOpen(ReportFormat format) async {
+    final isDemoMode = InventoryService.isDemoMode;
     final report = await _loadReport();
     final bytes = switch (format) {
-      ReportFormat.pdf => await _buildPdf(report),
-      ReportFormat.excel => _buildExcel(report),
+      ReportFormat.pdf => await _buildPdf(report, isDemoMode: isDemoMode),
+      ReportFormat.excel => _buildExcel(report, isDemoMode: isDemoMode),
     };
 
     final extension = format == ReportFormat.pdf ? 'pdf' : 'xlsx';
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File(
-      '${directory.path}/StockSense_inventory_report_${_fileDateFormat.format(report.generatedAt)}.$extension',
-    );
-    await file.writeAsBytes(bytes, flush: true);
+    final filename = 'StockSense_inventory_report_${_fileDateFormat.format(report.generatedAt)}.$extension';
 
-    // This hands the downloaded file to the platform's associated viewer while
-    // keeping the file accessible in the app's documents directory.
-    await OpenFile.open(file.path);
-    return ReportDownload(path: file.path, format: format);
+    if (kIsWeb) {
+      _downloadOnWeb(bytes, filename);
+      return ReportDownload(path: filename, format: format);
+    } else {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/$filename');
+      await file.writeAsBytes(bytes, flush: true);
+
+      // This hands the downloaded file to the platform's associated viewer while
+      // keeping the file accessible in the app's documents directory.
+      await OpenFile.open(file.path);
+      return ReportDownload(path: file.path, format: format);
+    }
+  }
+
+  static void _downloadOnWeb(List<int> bytes, String filename) {
+    // ignore: avoid_web_libraries_in_flutter
+    final blob = html.Blob([bytes]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.AnchorElement(href: url)
+      ..setAttribute('download', filename)
+      ..click();
+    html.Url.revokeObjectUrl(url);
   }
 
   static Future<_ReportData> _loadReport() async {
@@ -85,18 +105,19 @@ class ReportService {
         : user.displayName;
   }
 
-  static Future<Uint8List> _buildPdf(_ReportData report) async {
+  static Future<Uint8List> _buildPdf(_ReportData report, {required bool isDemoMode}) async {
     final document = pw.Document();
     document.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.landscape,
         margin: const pw.EdgeInsets.all(24),
-        header: (_) => _pdfHeader(report),
+        header: (_) => _pdfHeader(report, isDemoMode: isDemoMode),
         footer: (context) => pw.Align(
           alignment: pw.Alignment.centerRight,
           child: pw.Text('Page ${context.pageNumber} of ${context.pagesCount}'),
         ),
         build: (context) => [
+          if (isDemoMode) _pdfDemoWatermark(),
           _pdfSection('Current stock levels'),
           _pdfTable(
             [
@@ -174,7 +195,7 @@ class ReportService {
     return document.save();
   }
 
-  static pw.Widget _pdfHeader(_ReportData report) => pw.Column(
+  static pw.Widget _pdfHeader(_ReportData report, {required bool isDemoMode}) => pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text('StockSense Inventory Report',
@@ -185,6 +206,24 @@ class ReportService {
           pw.Text('Report period: $_periodLabel'),
           pw.SizedBox(height: 12),
         ],
+      );
+
+  static pw.Widget _pdfDemoWatermark() => pw.Container(
+        padding: const pw.EdgeInsets.all(8),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.orange100,
+          border: pw.Border.all(color: PdfColors.orange800, width: 2),
+          borderRadius: pw.BorderRadius.circular(4),
+        ),
+        child: pw.Text(
+          'DEMO MODE — Sample Data Only',
+          style: pw.TextStyle(
+            color: PdfColors.orange800,
+            fontSize: 12,
+            fontWeight: pw.FontWeight.bold,
+          ),
+          textAlign: pw.TextAlign.center,
+        ),
       );
 
   static pw.Widget _pdfSection(String title) => pw.Padding(
@@ -208,10 +247,10 @@ class ReportService {
     );
   }
 
-  static Uint8List _buildExcel(_ReportData report) {
+  static Uint8List _buildExcel(_ReportData report, {required bool isDemoMode}) {
     final workbook = Excel.createExcel();
     workbook.delete('Sheet1');
-    _writeSheet(workbook, 'Stock Levels', report, [
+    _writeSheet(workbook, 'Stock Levels', report, isDemoMode: isDemoMode, [
       [
         'Item',
         'Quantity',
@@ -231,7 +270,7 @@ class ReportService {
             item.unitPrice * item.quantity
           ]),
     ]);
-    _writeSheet(workbook, 'Movements', report, [
+    _writeSheet(workbook, 'Movements', report, isDemoMode: isDemoMode, [
       [
         'Date',
         'Direction',
@@ -251,7 +290,7 @@ class ReportService {
             movement.userName
           ]),
     ]);
-    _writeSheet(workbook, 'Restock Alerts', report, [
+    _writeSheet(workbook, 'Restock Alerts', report, isDemoMode: isDemoMode, [
       [
         'Alert',
         'Item',
@@ -269,19 +308,18 @@ class ReportService {
             item.category
           ]),
     ]);
-    _writeSheet(workbook, 'Categories', report, [
+    _writeSheet(workbook, 'Categories', report, isDemoMode: isDemoMode, [
       ['Category', 'Item', 'Quantity', 'Unit', 'Stock Value (KSh)'],
       ...report.categoryExcelRows,
     ]);
-    _writeSheet(workbook, 'AI Analytics', report, [
+    _writeSheet(workbook, 'AI Analytics', report, isDemoMode: isDemoMode, [
       ['AI analytics summary'],
       ...report.insights.map((insight) => [insight]),
     ]);
     return Uint8List.fromList(workbook.encode()!);
   }
 
-  static void _writeSheet(Excel workbook, String name, _ReportData report,
-      List<List<dynamic>> rows) {
+  static void _writeSheet(Excel workbook, String name, _ReportData report, {required bool isDemoMode, required List<List<dynamic>> rows}) {
     final sheet = workbook[name];
     sheet.appendRow([TextCellValue('StockSense Inventory Report')]);
     sheet.appendRow([TextCellValue('Business: ${report.businessName}')]);
@@ -289,6 +327,9 @@ class ReportService {
       TextCellValue('Generated: ${_dateTimeFormat.format(report.generatedAt)}')
     ]);
     sheet.appendRow([TextCellValue('Report period: $_periodLabel')]);
+    if (isDemoMode) {
+      sheet.appendRow([TextCellValue('DEMO MODE — Sample Data Only')]);
+    }
     sheet.appendRow([]);
     for (final row in rows) {
       sheet.appendRow(row.map(_excelValue).toList());

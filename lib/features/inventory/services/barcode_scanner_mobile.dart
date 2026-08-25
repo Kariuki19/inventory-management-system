@@ -19,6 +19,7 @@ class _BarcodeScannerScreen extends StatefulWidget {
 class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
   final MobileScannerController _controller = MobileScannerController();
   bool _hasCapturedBarcode = false;
+  bool _hasCameraError = false;
 
   void _onDetect(BarcodeCapture capture) {
     if (_hasCapturedBarcode) return;
@@ -43,7 +44,21 @@ class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Scan barcode')),
-      body: MobileScanner(controller: _controller, onDetect: _onDetect),
+      body: MobileScanner(
+        controller: _controller,
+        onDetect: _onDetect,
+        errorBuilder: (context, error, child) {
+          if (!_hasCameraError) {
+            _hasCameraError = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) Navigator.of(context).pop();
+            });
+          }
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      ),
     );
   }
 }

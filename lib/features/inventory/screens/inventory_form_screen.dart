@@ -845,9 +845,10 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
       if (widget.isEditing) {
         await InventoryService.updateInventoryItem(item);
         if (mounted) {
+          final demoModeProvider = Provider.of<DemoModeProvider>(context, listen: false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${item.name} updated successfully!'),
+              content: Text('${item.name} updated successfully!${demoModeProvider.isDemoMode ? " (Demo mode — changes won't be saved permanently)" : ""}'),
               backgroundColor: Colors.green,
             ),
           );
@@ -857,7 +858,9 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${item.name} added successfully!'),
+              content: Text(InventoryService.isDemoMode
+                  ? "Item added in demo mode — changes won't be saved permanently."
+                  : '${item.name} added successfully!'),
               backgroundColor: Colors.green,
             ),
           );

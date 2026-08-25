@@ -525,17 +525,16 @@ class _InventoryListScreenState extends State<InventoryListScreen>
                   },
                 ),
                 const SizedBox(height: 12),
-                if (currentUser?.isAdmin == true)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: OutlinedButton.icon(
-                      onPressed: _scanToAddItem,
-                      icon:
-                          Icon(kIsWeb ? Icons.keyboard : Icons.qr_code_scanner),
-                      label: const Text('Scan to add'),
-                    ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton.icon(
+                    onPressed: _scanToAddItem,
+                    icon: Icon(kIsWeb ? Icons.camera_alt : Icons.qr_code_scanner),
+                    label: const Text('Scan to add'),
+                    tooltip: kIsWeb ? 'Scan or Enter Barcode' : 'Scan Barcode',
                   ),
-                if (currentUser?.isAdmin == true) const SizedBox(height: 12),
+                ),
+                const SizedBox(height: 12),
 
                 // Category Tabs (with "All" default)
                 if (_tabController != null && categories.isNotEmpty)

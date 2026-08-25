@@ -1,4 +1,4 @@
 import 'package:flutter/material.dart';
 
-/// Web builds never call this because [BarcodeService] shows manual entry.
+/// Fallback implementation for unsupported platforms.
 Future<String?> scanBarcode(BuildContext context) async => null;
