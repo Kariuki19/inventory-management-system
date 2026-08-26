@@ -1638,69 +1638,66 @@ extension _DashboardScreenStateExtension on _DashboardScreenState {
           return const Center(child: Text('No inventory items'));
         }
 
-        return PieChart(
-          PieChartData(
-            pieTouchData: PieTouchData(
+        final labels = ['Normal Stock', 'Low Stock', 'Out of Stock'];
+        final values = [normalStock.toDouble(), lowStockItems.toDouble(), outOfStockItems.toDouble()];
+        final maxValue = values.reduce((a, b) => a > b ? a : b);
+
+        return BarChart(
+          BarChartData(
+            alignment: BarChartAlignment.spaceAround,
+            maxY: maxValue * 1.2,
+            barTouchData: BarTouchData(
               enabled: true,
-              touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                setState(() {
-                  if (!event.isInterestedForInteractions ||
-                      pieTouchResponse == null ||
-                      pieTouchResponse.touchedSection == null) {
-                    _touchedStockIndex = -1;
-                    return;
-                  }
-                  _touchedStockIndex =
-                      pieTouchResponse.touchedSection!.touchedSectionIndex;
-                });
-              },
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  return BarTooltipItem(
+                    '${labels[groupIndex]}: ${rod.toY.toInt()} items',
+                    const TextStyle(color: Colors.white),
+                  );
+                },
+              ),
             ),
-            sections: [
-              PieChartSectionData(
-                color: Colors.green,
-                value: normalStock.toDouble(),
-                title: _touchedStockIndex == 0
-                    ? '$normalStock items\n(${((normalStock / totalItems) * 100).toInt()}%)'
-                    : '${((normalStock / totalItems) * 100).toInt()}%',
-                titleStyle: TextStyle(
-                  fontSize: _touchedStockIndex == 0 ? 10 : 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) {
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        labels[value.toInt()],
+                        style: const TextStyle(fontSize: 10),
+                      ),
+                    );
+                  },
                 ),
-                radius: _touchedStockIndex == 0 ? 90 : 80,
-                showTitle: normalStock > 0,
               ),
-              PieChartSectionData(
-                color: Colors.orange,
-                value: lowStockItems.toDouble(),
-                title: _touchedStockIndex == 1
-                    ? '$lowStockItems items\n(${((lowStockItems / totalItems) * 100).toInt()}%)'
-                    : '${((lowStockItems / totalItems) * 100).toInt()}%',
-                titleStyle: TextStyle(
-                  fontSize: _touchedStockIndex == 1 ? 10 : 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: (value, meta) {
+                    return Text(
+                      value.toInt().toString(),
+                      style: const TextStyle(fontSize: 10),
+                    );
+                  },
                 ),
-                radius: _touchedStockIndex == 1 ? 90 : 80,
-                showTitle: lowStockItems > 0,
               ),
-              PieChartSectionData(
-                color: Colors.red,
-                value: outOfStockItems.toDouble(),
-                title: _touchedStockIndex == 2
-                    ? '$outOfStockItems items\n(${((outOfStockItems / totalItems) * 100).toInt()}%)'
-                    : '${((outOfStockItems / totalItems) * 100).toInt()}%',
-                titleStyle: TextStyle(
-                  fontSize: _touchedStockIndex == 2 ? 10 : 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-                radius: _touchedStockIndex == 2 ? 90 : 80,
-                showTitle: outOfStockItems > 0,
-              ),
-            ],
-            centerSpaceRadius: 40,
-            sectionsSpace: 2,
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            gridData: FlGridData(show: true, drawVerticalLine: false),
+            borderData: FlBorderData(show: false),
+            barGroups: List.generate(labels.length, (i) => BarChartGroupData(
+              x: i,
+              barRods: [BarChartRodData(
+                toY: values[i],
+                color: i == 0 ? Colors.green : i == 1 ? Colors.orange : Colors.red,
+                width: 16,
+                borderRadius: BorderRadius.circular(4),
+              )],
+            )),
           ),
         );
       },
@@ -2056,49 +2053,70 @@ extension _DashboardScreenStateExtension on _DashboardScreenState {
         final totalItems =
             categoryStats.values.fold<int>(0, (sum, count) => sum + count);
 
-        int colorIndex = 0;
+        final labels = categoryStats.keys.toList();
+        final values = categoryStats.values.map((v) => v.toDouble()).toList();
+        final maxValue = values.isEmpty ? 0.0 : values.reduce((a, b) => a > b ? a : b);
 
-        return PieChart(
-          PieChartData(
-            pieTouchData: PieTouchData(
+        return BarChart(
+          BarChartData(
+            alignment: BarChartAlignment.spaceAround,
+            maxY: maxValue * 1.2,
+            barTouchData: BarTouchData(
               enabled: true,
-              touchCallback: (event, pieTouchResponse) {
-                setState(() {
-                  if (!event.isInterestedForInteractions ||
-                      pieTouchResponse == null ||
-                      pieTouchResponse.touchedSection == null) {
-                    _touchedCategoryIndex = -1;
-                    return;
-                  }
-                  _touchedCategoryIndex =
-                      pieTouchResponse.touchedSection!.touchedSectionIndex;
-                });
-              },
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  final percentage = ((values[groupIndex] / totalItems) * 100).toInt();
+                  return BarTooltipItem(
+                    '${labels[groupIndex]}: ${rod.toY.toInt()} items ($percentage%)',
+                    const TextStyle(color: Colors.white),
+                  );
+                },
+              ),
             ),
-            centerSpaceRadius: 40,
-            sections: categoryStats.entries.map((entry) {
-              final index = categoryStats.keys.toList().indexOf(entry.key);
-              final isTouched = _touchedCategoryIndex == index;
-              final color = colors[colorIndex % colors.length];
-              colorIndex++;
-              final percentage = ((entry.value / totalItems) * 100).toInt();
-
-              return PieChartSectionData(
-                color: color,
-                value: entry.value.toDouble(),
-                title: isTouched
-                    ? '${entry.key}\n${entry.value} items\n$percentage%'
-                    : (percentage > 5 ? '$percentage%' : ''),
-                titleStyle: TextStyle(
-                  fontSize: isTouched ? 10 : 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (value, meta) {
+                    if (value.toInt() >= labels.length) return const SizedBox();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        labels[value.toInt()],
+                        style: const TextStyle(fontSize: 10),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  },
                 ),
-                radius: isTouched ? 90 : 80,
-                showTitle: entry.value > 0,
-              );
-            }).toList(),
-            sectionsSpace: 2,
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: (value, meta) {
+                    return Text(
+                      value.toInt().toString(),
+                      style: const TextStyle(fontSize: 10),
+                    );
+                  },
+                ),
+              ),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            gridData: FlGridData(show: true, drawVerticalLine: false),
+            borderData: FlBorderData(show: false),
+            barGroups: List.generate(labels.length, (i) => BarChartGroupData(
+              x: i,
+              barRods: [BarChartRodData(
+                toY: values[i],
+                color: colors[i % colors.length],
+                width: 16,
+                borderRadius: BorderRadius.circular(4),
+              )],
+            )),
           ),
         );
       },
