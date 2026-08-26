@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/inventory_item.dart';
 import '../services/inventory_service.dart';
@@ -845,10 +844,11 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
       if (widget.isEditing) {
         await InventoryService.updateInventoryItem(item);
         if (mounted) {
-          final demoModeProvider = Provider.of<DemoModeProvider>(context, listen: false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${item.name} updated successfully!${demoModeProvider.isDemoMode ? " (Demo mode — changes won't be saved permanently)" : ""}'),
+              content: Text(InventoryService.isDemoMode
+                  ? '${item.name} updated successfully! (Demo mode — changes won't be saved permanently)'
+                  : '${item.name} updated successfully!'),
               backgroundColor: Colors.green,
             ),
           );

@@ -46,7 +46,8 @@ class ReportService {
     };
 
     final extension = format == ReportFormat.pdf ? 'pdf' : 'xlsx';
-    final filename = 'StockSense_inventory_report_${_fileDateFormat.format(report.generatedAt)}.$extension';
+    final filename =
+        'StockSense_inventory_report_${_fileDateFormat.format(report.generatedAt)}.$extension';
 
     if (kIsWeb) {
       _downloadOnWeb(bytes, filename);
@@ -105,7 +106,8 @@ class ReportService {
         : user.displayName;
   }
 
-  static Future<Uint8List> _buildPdf(_ReportData report, {required bool isDemoMode}) async {
+  static Future<Uint8List> _buildPdf(_ReportData report,
+      {required bool isDemoMode}) async {
     final document = pw.Document();
     document.addPage(
       pw.MultiPage(
@@ -195,7 +197,8 @@ class ReportService {
     return document.save();
   }
 
-  static pw.Widget _pdfHeader(_ReportData report, {required bool isDemoMode}) => pw.Column(
+  static pw.Widget _pdfHeader(_ReportData report, {required bool isDemoMode}) =>
+      pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text('StockSense Inventory Report',
@@ -250,27 +253,33 @@ class ReportService {
   static Uint8List _buildExcel(_ReportData report, {required bool isDemoMode}) {
     final workbook = Excel.createExcel();
     workbook.delete('Sheet1');
-    _writeSheet(workbook, 'Stock Levels', report, isDemoMode: isDemoMode, [
-      [
-        'Item',
-        'Quantity',
-        'Unit',
-        'Category',
-        'Restock Threshold',
-        'Unit Price (KSh)',
-        'Stock Value (KSh)'
+    _writeSheet(
+      workbook,
+      'Stock Levels',
+      report,
+      isDemoMode: isDemoMode,
+      rows: [
+        [
+          'Item',
+          'Quantity',
+          'Unit',
+          'Category',
+          'Restock Threshold',
+          'Unit Price (KSh)',
+          'Stock Value (KSh)'
+        ],
+        ...report.items.map((item) => [
+              item.name,
+              item.quantity,
+              item.unit,
+              item.category,
+              item.reorderLevel,
+              item.unitPrice,
+              item.unitPrice * item.quantity
+            ]),
       ],
-      ...report.items.map((item) => [
-            item.name,
-            item.quantity,
-            item.unit,
-            item.category,
-            item.reorderLevel,
-            item.unitPrice,
-            item.unitPrice * item.quantity
-          ]),
-    ]);
-    _writeSheet(workbook, 'Movements', report, isDemoMode: isDemoMode, [
+    );
+    _writeSheet(workbook, 'Movements', report, isDemoMode: isDemoMode, rows: [
       [
         'Date',
         'Direction',
@@ -290,36 +299,51 @@ class ReportService {
             movement.userName
           ]),
     ]);
-    _writeSheet(workbook, 'Restock Alerts', report, isDemoMode: isDemoMode, [
-      [
-        'Alert',
-        'Item',
-        'Current Stock',
-        'Unit',
-        'Restock Threshold',
-        'Category'
+    _writeSheet(workbook, 'Restock Alerts', report,
+        isDemoMode: isDemoMode,
+        rows: [
+          [
+            'Alert',
+            'Item',
+            'Current Stock',
+            'Unit',
+            'Restock Threshold',
+            'Category'
+          ],
+          ...report.lowStockItems.map((item) => [
+                item.quantity == 0 ? 'OUT OF STOCK' : 'RESTOCK REQUIRED',
+                item.name,
+                item.quantity,
+                item.unit,
+                item.reorderLevel,
+                item.category
+              ]),
+        ]);
+    _writeSheet(
+      workbook,
+      'Categories',
+      report,
+      isDemoMode: isDemoMode,
+      rows: [
+        ['Category', 'Item', 'Quantity', 'Unit', 'Stock Value (KSh)'],
+        ...report.categoryExcelRows,
       ],
-      ...report.lowStockItems.map((item) => [
-            item.quantity == 0 ? 'OUT OF STOCK' : 'RESTOCK REQUIRED',
-            item.name,
-            item.quantity,
-            item.unit,
-            item.reorderLevel,
-            item.category
-          ]),
-    ]);
-    _writeSheet(workbook, 'Categories', report, isDemoMode: isDemoMode, [
-      ['Category', 'Item', 'Quantity', 'Unit', 'Stock Value (KSh)'],
-      ...report.categoryExcelRows,
-    ]);
-    _writeSheet(workbook, 'AI Analytics', report, isDemoMode: isDemoMode, [
-      ['AI analytics summary'],
-      ...report.insights.map((insight) => [insight]),
-    ]);
+    );
+    _writeSheet(
+      workbook,
+      'AI Analytics',
+      report,
+      isDemoMode: isDemoMode,
+      rows: [
+        ['AI analytics summary'],
+        ...report.insights.map((insight) => [insight]),
+      ],
+    );
     return Uint8List.fromList(workbook.encode()!);
   }
 
-  static void _writeSheet(Excel workbook, String name, _ReportData report, {required bool isDemoMode, required List<List<dynamic>> rows}) {
+  static void _writeSheet(Excel workbook, String name, _ReportData report,
+      {required bool isDemoMode, required List<List<dynamic>> rows}) {
     final sheet = workbook[name];
     sheet.appendRow([TextCellValue('StockSense Inventory Report')]);
     sheet.appendRow([TextCellValue('Business: ${report.businessName}')]);

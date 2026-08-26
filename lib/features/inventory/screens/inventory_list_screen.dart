@@ -527,11 +527,13 @@ class _InventoryListScreenState extends State<InventoryListScreen>
                 const SizedBox(height: 12),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: OutlinedButton.icon(
-                    onPressed: _scanToAddItem,
-                    icon: Icon(kIsWeb ? Icons.camera_alt : Icons.qr_code_scanner),
-                    label: const Text('Scan to add'),
-                    tooltip: kIsWeb ? 'Scan or Enter Barcode' : 'Scan Barcode',
+                  child: Tooltip(
+                    message: kIsWeb ? 'Scan or Enter Barcode' : 'Scan Barcode',
+                    child: OutlinedButton.icon(
+                      onPressed: _scanToAddItem,
+                      icon: Icon(kIsWeb ? Icons.camera_alt : Icons.qr_code_scanner),
+                      label: const Text('Scan to add'),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),

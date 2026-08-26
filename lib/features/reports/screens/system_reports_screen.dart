@@ -1854,7 +1854,7 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
       )
     ];
 
-    final chart = charts.BarChart<String>(
+    final chart = charts.BarChart(
       series,
       animate: false,
       barGroupingType: charts.BarGroupingType.grouped,

@@ -18,7 +18,6 @@ Future<String?> scanBarcode(BuildContext context) async {
   final video = html.VideoElement()
     ..autoplay = true
     ..muted = true
-    ..playsInline = true
     ..srcObject = stream
     ..style.width = '100%'
     ..style.height = '100%'
