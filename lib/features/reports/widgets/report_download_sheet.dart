@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../services/report_service.dart';
+import '../../inventory/services/inventory_service.dart';
 
 class ReportDownloadSheet {
   static Future<void> show(BuildContext context) async {
@@ -68,7 +69,11 @@ class ReportDownloadSheet {
     );
 
     try {
-      final download = await ReportService.generateAndOpen(format);
+      final isDemoMode = InventoryService.isDemoMode;
+      final download = await ReportService.generateAndDownloadReport(
+        format,
+        isDemoMode: isDemoMode,
+      );
       if (context.mounted) {
         Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context).showSnackBar(

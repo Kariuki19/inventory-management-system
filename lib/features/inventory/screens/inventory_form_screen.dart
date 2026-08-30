@@ -14,12 +14,34 @@ class InventoryFormScreen extends StatefulWidget {
   final InventoryItem? item;
   final bool isEditing;
   final String? initialBarcode;
+  final String? initialName;
+  final String? initialDescription;
+  final int? initialQuantity;
+  final double? initialUnitPrice;
+  final bool? initialIsPerishable;
+  final DateTime? initialExpiryDate;
+  final String? initialCategory;
+  final String? initialSupplier;
+  final String? initialBatchNumber;
+  final String? initialUnit;
+  final int? initialReorderLevel;
 
   const InventoryFormScreen({
     super.key,
     this.item,
     this.isEditing = false,
     this.initialBarcode,
+    this.initialName,
+    this.initialDescription,
+    this.initialQuantity,
+    this.initialUnitPrice,
+    this.initialIsPerishable,
+    this.initialExpiryDate,
+    this.initialCategory,
+    this.initialSupplier,
+    this.initialBatchNumber,
+    this.initialUnit,
+    this.initialReorderLevel,
   });
 
   @override
@@ -38,6 +60,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
   final _barcodeController = TextEditingController();
   final _reorderLevelController = TextEditingController();
   final _imageUrlController = TextEditingController();
+  final _batchNumberController = TextEditingController();
 
   // Currency formatter
   // final _currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
@@ -59,8 +82,9 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     _loadCategories();
     if (widget.item != null) {
       _prefillForm();
+    } else {
+      _prefillFromInitialValues();
     }
-    _barcodeController.text = widget.initialBarcode ?? _barcodeController.text;
   }
 
   void _prefillForm() {
@@ -80,6 +104,31 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     _imageUrlController.text = item.imageUrl ?? '';
     _isPerishable = item.isPerishable;
     _selectedExpiryDate = item.expiryDate;
+    _batchNumberController.text = item.batchNumber ?? '';
+  }
+
+  void _prefillFromInitialValues() {
+    if (widget.initialBarcode != null) _barcodeController.text = widget.initialBarcode!;
+    if (widget.initialName != null) _nameController.text = widget.initialName!;
+    if (widget.initialDescription != null) _descriptionController.text = widget.initialDescription!;
+    if (widget.initialCategory != null) {
+      _categoryController.text = widget.initialCategory!;
+      _selectedCategory = widget.initialCategory;
+    }
+    if (widget.initialQuantity != null) {
+      _quantityController.text = widget.initialQuantity.toString();
+    }
+    if (widget.initialUnitPrice != null) {
+      _unitPriceController.text = _currencyFormat.format(widget.initialUnitPrice);
+    }
+    if (widget.initialSupplier != null) _supplierController.text = widget.initialSupplier!;
+    if (widget.initialIsPerishable != null) _isPerishable = widget.initialIsPerishable!;
+    if (widget.initialExpiryDate != null) _selectedExpiryDate = widget.initialExpiryDate;
+    if (widget.initialBatchNumber != null) _batchNumberController.text = widget.initialBatchNumber!;
+    if (widget.initialUnit != null) _unitController.text = widget.initialUnit!;
+    if (widget.initialReorderLevel != null) {
+      _reorderLevelController.text = widget.initialReorderLevel.toString();
+    }
   }
 
   Future<void> _showImagePickerOptions() async {
@@ -840,6 +889,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
         imageUrl: finalImageUrl,
         isPerishable: _isPerishable,
         expiryDate: _selectedExpiryDate,
+        batchNumber: _batchNumberController.text.trim(),
       );
 
       if (widget.isEditing) {
@@ -1245,6 +1295,13 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                                     controller: _barcodeController,
                                     label: 'Barcode / SKU',
                                     icon: Icons.qr_code,
+                                    isSmallScreen: isSmallScreen,
+                                  ),
+                                  SizedBox(height: isSmallScreen ? 12 : 16),
+                                  _buildAnimatedTextFormField(
+                                    controller: _batchNumberController,
+                                    label: 'Batch Number',
+                                    icon: Icons.tag,
                                     isSmallScreen: isSmallScreen,
                                   ),
                                   SizedBox(height: isSmallScreen ? 12 : 16),
@@ -1860,6 +1917,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     _barcodeController.dispose();
     _reorderLevelController.dispose();
     _imageUrlController.dispose();
+    _batchNumberController.dispose();
     super.dispose();
   }
 }

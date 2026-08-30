@@ -17,7 +17,7 @@ class _BarcodeScannerScreen extends StatefulWidget {
 }
 
 class _BarcodeScannerScreenState extends State<_BarcodeScannerScreen> {
-  final MobileScannerController _controller = MobileScannerController();
+  final MobileScannerController _controller = MobileScannerController(facing: CameraFacing.back);
   bool _hasCapturedBarcode = false;
   bool _hasCameraError = false;
 

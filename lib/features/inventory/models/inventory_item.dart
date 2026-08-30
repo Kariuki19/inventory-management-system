@@ -16,6 +16,7 @@ class InventoryItem {
   final String? imageUrl;
   final DateTime? expiryDate;
   final bool isPerishable;
+  final String? batchNumber;
 
   final DocumentSnapshot? snapshot;
 
@@ -35,6 +36,7 @@ class InventoryItem {
     this.imageUrl,
     this.expiryDate,
     this.isPerishable = false,
+    this.batchNumber,
     this.snapshot,
   });
 
@@ -64,6 +66,7 @@ class InventoryItem {
       unit: map['unit'] ?? 'Units',
       imageUrl: map['imageUrl'],
       isPerishable: map['isPerishable'] ?? false,
+      batchNumber: map['batchNumber'] as String?,
       snapshot: doc,
     );
   }
@@ -92,6 +95,7 @@ class InventoryItem {
       unit: map['unit'] ?? 'Units',
       imageUrl: map['imageUrl'],
       isPerishable: map['isPerishable'] ?? false,
+      batchNumber: map['batchNumber'] as String?,
     );
   }
 
@@ -111,6 +115,7 @@ class InventoryItem {
       'imageUrl': imageUrl,
       'expiryDate': expiryDate?.toIso8601String(),
       'isPerishable': isPerishable,
+      'batchNumber': batchNumber,
     };
   }
 
@@ -131,6 +136,7 @@ class InventoryItem {
       'imageUrl': imageUrl,
       'expiryDate': expiryDate?.toIso8601String(),
       'isPerishable': isPerishable,
+      'batchNumber': batchNumber,
     };
   }
 
@@ -157,6 +163,7 @@ class InventoryItem {
           ? DateTime.parse(json['expiryDate'])
           : null,
       isPerishable: json['isPerishable'] ?? false,
+      batchNumber: json['batchNumber'] as String?,
     );
   }
 
@@ -176,6 +183,7 @@ class InventoryItem {
     String? imageUrl,
     DateTime? expiryDate,
     bool? isPerishable,
+    String? batchNumber,
     DocumentSnapshot? snapshot,
   }) {
     return InventoryItem(
@@ -194,6 +202,7 @@ class InventoryItem {
       imageUrl: imageUrl ?? this.imageUrl,
       expiryDate: expiryDate ?? this.expiryDate,
       isPerishable: isPerishable ?? this.isPerishable,
+      batchNumber: batchNumber ?? this.batchNumber,
       snapshot: snapshot ?? this.snapshot,
     );
   }

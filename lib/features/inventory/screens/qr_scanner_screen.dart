@@ -24,7 +24,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   void initState() {
     super.initState();
     _loadCurrentUser();
-    controller = MobileScannerController();
+    controller = MobileScannerController(facing: CameraFacing.back);
   }
 
   void _loadCurrentUser() {
@@ -265,6 +265,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
           imageUrl: data['imageUrl'] as String?,
           isPerishable: parseBool(data['isPerishable']),
           expiryDate: parseDate(data['expiryDate']),
+          batchNumber: data['batchNumber'] as String?,
         );
 
         // Navigate to the inventory form screen with the scanned item

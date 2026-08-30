@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:excel/excel.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:intl/intl.dart';
@@ -37,8 +38,14 @@ class ReportService {
   static final _currencyFormat = NumberFormat('#,##0.00');
 
   static Future<ReportDownload> generateAndOpen(ReportFormat format) async {
-    final isDemoMode = InventoryService.isDemoMode;
-    final report = await _loadReport();
+    return generateAndDownloadReport(format, isDemoMode: InventoryService.isDemoMode);
+  }
+
+  static Future<ReportDownload> generateAndDownloadReport(
+    ReportFormat format, {
+    required bool isDemoMode,
+  }) async {
+    final report = await _loadReport(isDemoMode: isDemoMode);
     final bytes = switch (format) {
       ReportFormat.pdf => await _buildPdf(report, isDemoMode: isDemoMode),
       ReportFormat.excel => _buildExcel(report, isDemoMode: isDemoMode),
@@ -63,16 +70,69 @@ class ReportService {
     }
   }
 
+  static Future<List<InventoryItem>> _fetchDemoInventory() async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc('demo_admin_seed')
+        .collection('demo_inventory')
+        .get();
+    return querySnapshot.docs
+        .map((doc) => InventoryItem.fromDoc(doc))
+        .toList();
+  }
 
+  static Future<List<InventoryItem>> _fetchLiveInventory(String adminUid) async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(adminUid)
+        .collection('inventory')
+        .get();
+    return querySnapshot.docs
+        .map((doc) => InventoryItem.fromDoc(doc))
+        .toList();
+  }
 
-  static Future<_ReportData> _loadReport() async {
+  static Future<_ReportData> _loadReport({bool? isDemoMode}) async {
+    final demoMode = isDemoMode ?? InventoryService.isDemoMode;
     final generatedAt = DateTime.now();
-    final results = await Future.wait([
-      InventoryService.getInventoryItems(limit: 10000),
-      InventoryService.getStockMovements(limit: 10000),
-    ]);
-    final items = results[0] as List<InventoryItem>;
-    final movements = results[1] as List<StockMovement>;
+
+    List<InventoryItem> items;
+    List<StockMovement> movements;
+
+    if (demoMode) {
+      items = await _fetchDemoInventory();
+      try {
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc('demo_admin_seed')
+            .collection('demo_stock_movements')
+            .get();
+        movements = querySnapshot.docs
+            .map((doc) => StockMovement.fromMap(doc.data(), doc.id))
+            .toList();
+      } catch (e) {
+        movements = [];
+      }
+    } else {
+      final currentUser = AuthService.currentUser;
+      final adminUid = (currentUser?.adminUid != null && currentUser!.adminUid!.isNotEmpty)
+          ? currentUser.adminUid!
+          : (currentUser?.id ?? '');
+      items = await _fetchLiveInventory(adminUid);
+      try {
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(adminUid)
+            .collection('stock_movements')
+            .get();
+        movements = querySnapshot.docs
+            .map((doc) => StockMovement.fromMap(doc.data(), doc.id))
+            .toList();
+      } catch (e) {
+        movements = [];
+      }
+    }
+
     final predictions = await Future.wait(
       items.map((item) => InventoryService.getItemPrediction(item.id)),
     );
@@ -192,6 +252,26 @@ class ReportService {
       pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
+          if (isDemoMode) ...[
+            pw.Container(
+              alignment: pw.Alignment.center,
+              padding: const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+              margin: const pw.EdgeInsets.only(bottom: 12),
+              decoration: pw.BoxDecoration(
+                color: PdfColors.orange100,
+                border: pw.Border.all(color: PdfColors.orange800, width: 2),
+                borderRadius: pw.BorderRadius.circular(4),
+              ),
+              child: pw.Text(
+                'DEMO MODE — Sample Data Only',
+                style: pw.TextStyle(
+                  color: PdfColors.orange800,
+                  fontSize: 14,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
           pw.Text('StockSense Inventory Report',
               style:
                   pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),

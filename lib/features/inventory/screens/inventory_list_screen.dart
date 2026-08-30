@@ -761,13 +761,46 @@ class _InventoryListScreenState extends State<InventoryListScreen>
     final barcode = await BarcodeService.getBarcodeValue(context);
     if (!mounted || barcode == null) return;
 
-    final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        builder: (_) => InventoryFormScreen(initialBarcode: barcode),
+    // Show a loading dialog during lookup
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => const Center(
+        child: CircularProgressIndicator(),
       ),
     );
-    if (result == true && mounted) {
-      _refreshItems();
+
+    Map<String, dynamic>? lookupData;
+    try {
+      lookupData = await BarcodeService.lookupProduct(barcode);
+    } catch (_) {}
+
+    if (mounted) {
+      Navigator.of(context, rootNavigator: true).pop(); // Dismiss loading dialog
+
+      final result = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => InventoryFormScreen(
+            initialBarcode: barcode,
+            initialName: lookupData?['name'] as String?,
+            initialDescription: lookupData?['description'] as String?,
+            initialCategory: lookupData?['category'] as String?,
+            initialQuantity: lookupData?['quantity'] as int?,
+            initialUnitPrice: lookupData?['unitPrice'] as double?,
+            initialSupplier: lookupData?['supplier'] as String?,
+            initialIsPerishable: lookupData?['isPerishable'] as bool?,
+            initialExpiryDate: lookupData?['expiryDate'] is String
+                ? DateTime.tryParse(lookupData!['expiryDate'] as String)
+                : lookupData?['expiryDate'] as DateTime?,
+            initialBatchNumber: lookupData?['batchNumber'] as String?,
+            initialUnit: lookupData?['unit'] as String?,
+            initialReorderLevel: lookupData?['reorderLevel'] as int?,
+          ),
+        ),
+      );
+      if (result == true && mounted) {
+        _refreshItems();
+      }
     }
   }
 
