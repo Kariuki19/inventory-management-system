@@ -8,6 +8,7 @@ import '../models/inventory_item.dart';
 import '../services/inventory_service.dart';
 import '../services/unified_image_service.dart';
 import 'package:intl/intl.dart'; // Import for currency formatting
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 class InventoryFormScreen extends StatefulWidget {
   final InventoryItem? item;
@@ -846,9 +847,11 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(InventoryService.isDemoMode
-                  ? '${item.name} updated successfully! (Demo mode — changes won't be saved permanently)'
-                  : '${item.name} updated successfully!'),
+              content: Text(
+                InventoryService.isDemoMode
+                    ? "${item.name} updated successfully! (Demo mode — changes won't be saved permanently)"
+                    : "${item.name} updated successfully!",
+              ),
               backgroundColor: Colors.green,
             ),
           );
@@ -858,9 +861,11 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(InventoryService.isDemoMode
-                  ? "Item added in demo mode — changes won't be saved permanently."
-                  : '${item.name} added successfully!'),
+              content: Text(
+                InventoryService.isDemoMode
+                    ? "Item added in demo mode — changes won't be saved permanently."
+                    : "${item.name} added successfully!",
+              ),
               backgroundColor: Colors.green,
             ),
           );

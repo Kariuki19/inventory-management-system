@@ -8,8 +8,7 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html show Blob, Url, AnchorElement;
+import 'web_download.dart';
 
 import '../../auth/services/auth_service.dart';
 import '../../inventory/models/inventory_item.dart';
@@ -50,7 +49,7 @@ class ReportService {
         'StockSense_inventory_report_${_fileDateFormat.format(report.generatedAt)}.$extension';
 
     if (kIsWeb) {
-      _downloadOnWeb(bytes, filename);
+      downloadOnWeb(bytes, filename);
       return ReportDownload(path: filename, format: format);
     } else {
       final directory = await getApplicationDocumentsDirectory();
@@ -64,15 +63,7 @@ class ReportService {
     }
   }
 
-  static void _downloadOnWeb(List<int> bytes, String filename) {
-    // ignore: avoid_web_libraries_in_flutter
-    final blob = html.Blob([bytes]);
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
-      ..setAttribute('download', filename)
-      ..click();
-    html.Url.revokeObjectUrl(url);
-  }
+
 
   static Future<_ReportData> _loadReport() async {
     final generatedAt = DateTime.now();
