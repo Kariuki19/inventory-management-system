@@ -17,6 +17,7 @@ const List<DemoNavItem> demoNavItems = [
   DemoNavItem(icon: Icons.grid_view_rounded, label: 'Overview'),
   DemoNavItem(icon: Icons.inventory_2_outlined, label: 'Inventory'),
   DemoNavItem(icon: Icons.swap_horiz_rounded, label: 'Stock Movements'),
+  DemoNavItem(icon: Icons.assessment_rounded, label: 'Reports'),
   DemoNavItem(icon: Icons.trending_up_rounded, label: 'Predictions'),
   DemoNavItem(icon: Icons.person_outline_rounded, label: 'Profile'),
 ];

@@ -677,7 +677,7 @@ class _InventoryListScreenState extends State<InventoryListScreen>
           ),
         ],
       ),
-      floatingActionButton: currentUser?.isAdmin == true
+      floatingActionButton: (currentUser?.isAdmin == true || InventoryService.isDemoMode)
           ? AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               child: FloatingActionButton.extended(
@@ -770,9 +770,25 @@ class _InventoryListScreenState extends State<InventoryListScreen>
       ),
     );
 
-    Map<String, dynamic>? lookupData;
+    InventoryItem? existingItem;
     try {
-      lookupData = await BarcodeService.lookupProduct(barcode);
+      // Query Firestore for existing item with matching barcode
+      final currentUser = AuthService.currentUser;
+      if (currentUser != null) {
+        final collectionPath = InventoryService.isDemoMode
+            ? 'users/demo_admin_seed/demo_inventory'
+            : 'users/${currentUser.id}/inventory';
+        
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection(collectionPath)
+            .where('barcode', isEqualTo: barcode)
+            .limit(1)
+            .get();
+        
+        if (querySnapshot.docs.isNotEmpty) {
+          existingItem = InventoryItem.fromDoc(querySnapshot.docs.first);
+        }
+      }
     } catch (_) {}
 
     if (mounted) {
@@ -781,20 +797,19 @@ class _InventoryListScreenState extends State<InventoryListScreen>
       final result = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
           builder: (_) => InventoryFormScreen(
+            readonlyBarcode: existingItem != null,
             initialBarcode: barcode,
-            initialName: lookupData?['name'] as String?,
-            initialDescription: lookupData?['description'] as String?,
-            initialCategory: lookupData?['category'] as String?,
-            initialQuantity: lookupData?['quantity'] as int?,
-            initialUnitPrice: lookupData?['unitPrice'] as double?,
-            initialSupplier: lookupData?['supplier'] as String?,
-            initialIsPerishable: lookupData?['isPerishable'] as bool?,
-            initialExpiryDate: lookupData?['expiryDate'] is String
-                ? DateTime.tryParse(lookupData!['expiryDate'] as String)
-                : lookupData?['expiryDate'] as DateTime?,
-            initialBatchNumber: lookupData?['batchNumber'] as String?,
-            initialUnit: lookupData?['unit'] as String?,
-            initialReorderLevel: lookupData?['reorderLevel'] as int?,
+            initialName: existingItem?.name,
+            initialDescription: existingItem?.description,
+            initialCategory: existingItem?.category,
+            initialQuantity: existingItem?.quantity,
+            initialUnitPrice: existingItem?.unitPrice,
+            initialSupplier: existingItem?.supplier,
+            initialIsPerishable: existingItem?.isPerishable,
+            initialExpiryDate: existingItem?.expiryDate,
+            initialBatchNumber: existingItem?.batchNumber,
+            initialUnit: existingItem?.unit,
+            initialReorderLevel: existingItem?.reorderLevel,
           ),
         ),
       );

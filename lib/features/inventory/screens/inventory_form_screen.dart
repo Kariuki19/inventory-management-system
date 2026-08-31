@@ -25,6 +25,7 @@ class InventoryFormScreen extends StatefulWidget {
   final String? initialBatchNumber;
   final String? initialUnit;
   final int? initialReorderLevel;
+  final bool readonlyBarcode;
 
   const InventoryFormScreen({
     super.key,
@@ -42,6 +43,7 @@ class InventoryFormScreen extends StatefulWidget {
     this.initialBatchNumber,
     this.initialUnit,
     this.initialReorderLevel,
+    this.readonlyBarcode = false,
   });
 
   @override
@@ -1296,6 +1298,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                                     label: 'Barcode / SKU',
                                     icon: Icons.qr_code,
                                     isSmallScreen: isSmallScreen,
+                                    readOnly: widget.readonlyBarcode,
                                   ),
                                   SizedBox(height: isSmallScreen ? 12 : 16),
                                   _buildAnimatedTextFormField(
@@ -1498,6 +1501,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
     List<TextInputFormatter>? inputFormatters,
     int maxLines = 1,
     bool isSmallScreen = false,
+    bool readOnly = false,
   }) {
     return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 400),
@@ -1518,6 +1522,7 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
                         : Matrix4.identity(),
                     child: TextFormField(
                       controller: controller,
+                      readOnly: readOnly,
                       decoration: InputDecoration(
                         labelText: label,
                         prefixIcon: AnimatedContainer(

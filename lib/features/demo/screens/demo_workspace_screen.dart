@@ -11,6 +11,7 @@ import '../../inventory/services/analytics_service.dart';
 import '../../auth/services/auth_service.dart';
 import '../../inventory/screens/inventory_list_screen.dart';
 import '../../stock/screens/stock_movements_screen.dart';
+import '../../reports/screens/system_reports_screen.dart';
 import '../widgets/demo_sidebar.dart';
 import '../widgets/demo_top_bar.dart';
 import 'demo_overview_screen.dart';
@@ -49,6 +50,7 @@ class _DemoWorkspaceScreenState extends State<DemoWorkspaceScreen> {
     DemoOverviewScreen(),
     InventoryListScreen(),
     StockMovementsScreen(),
+    SystemReportsScreen(),
     DemoPredictionsScreen(),
     DemoProfileScreen(),
   ];
