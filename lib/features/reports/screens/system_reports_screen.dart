@@ -2173,11 +2173,11 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
 
   Future<void> _shareViaEmail(
           BuildContext context, Map<String, dynamic>? data) =>
-      _shareReport(context, data);
+      _shareReport(ReportFormat.pdf);
 
   Future<void> _shareViaWhatsApp(
           BuildContext context, Map<String, dynamic>? data) =>
-      _shareReport(context, data);
+      _shareReport(ReportFormat.excel);
 
   /// Download report with file save dialog
   Future<void> _downloadReport(
@@ -2220,47 +2220,6 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error generating report: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  /// Share report (email/WhatsApp) as PDF attachment
-  Future<void> _shareReport(
-      BuildContext context, Map<String, dynamic>? reportData) async {
-    if (reportData == null) return;
-
-    try {
-      final categoryChartBytes = await _captureChartAsImage(_categoryChartKey);
-      final monthlyTrendsChartBytes =
-          await _captureChartAsImage(_monthlyTrendsChartKey);
-
-      // Generate PDF
-      final pdfBytes = await _generatePdfReport(
-        reportData,
-        categoryChartBytes,
-        monthlyTrendsChartBytes,
-        Theme.of(context).primaryColor,
-      );
-
-      // Save temporarily
-      final dir = await getTemporaryDirectory();
-      final path =
-          '${dir.path}/system-report-${DateFormat('yyyy-MM-dd-HHmmss').format(DateTime.now())}.pdf';
-      final file = File(path);
-      await file.writeAsBytes(pdfBytes);
-
-      await Share.shareXFiles(
-        [XFile(path)],
-        subject: 'Inventory System Report',
-        text: 'Please find the attached report.',
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error sharing report: $e'),
           backgroundColor: Colors.red,
         ),
       );
