@@ -1,0 +1,13 @@
+{
+  "name": "firestore-demo-seed",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "seed": "node seed.js",
+    "clear": "node clear.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.1.0"
+  }
+}
