@@ -70,11 +70,19 @@ class ReportService {
     }
   }
 
+  static Future<Uint8List> buildReportBytes(ReportFormat format) async {
+    final report = await _loadReport(isDemoMode: InventoryService.isDemoMode);
+    return switch (format) {
+      ReportFormat.pdf => await _buildPdf(report, isDemoMode: InventoryService.isDemoMode),
+      ReportFormat.excel => _buildExcel(report, isDemoMode: InventoryService.isDemoMode),
+    };
+  }
+
   static Future<List<InventoryItem>> _fetchDemoInventory() async {
     final querySnapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc('demo_admin_seed')
-        .collection('demo_inventory')
+        .collection('demo_inventory_items')
         .get();
     return querySnapshot.docs
         .map((doc) => InventoryItem.fromDoc(doc))

@@ -11,6 +11,7 @@ import '../../inventory/models/inventory_item.dart';
 import '../../stock/models/stock_movement.dart';
 import '../../home/screens/home_page.dart';
 import '../widgets/report_download_sheet.dart';
+import '../services/report_service.dart';
 
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
@@ -101,6 +102,31 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
     }
   }
 
+  Future<void> _shareReport(ReportFormat format) async {
+    try {
+      final bytes = await ReportService.buildReportBytes(format);
+      final ext = format == ReportFormat.pdf ? 'pdf' : 'xlsx';
+      final name = 'StockSense_report_${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/$name');
+      await file.writeAsBytes(bytes, flush: true);
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'StockSense Inventory Report',
+        text: 'Please find the attached StockSense inventory report.',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sharing report: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _loadReportData() async {
     setState(() {
       _isLoading = true;
@@ -110,7 +136,12 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
       final dashboardStats = await InventoryService.getDashboardStats();
       final categoryStats = await InventoryService.getCategoryStats();
       final monthlyTrends = await InventoryService.getMonthlyMovementTrends();
-      final allUsers = await AuthService.getAllUsers();
+      
+      // Guard Users tab Firestore fetch with demo-mode check
+      final allUsers = InventoryService.isDemoMode 
+          ? [] 
+          : await AuthService.getAllUsers();
+      
       final allItems = await InventoryService.getInventoryItems();
       final stockMovements =
           await InventoryService.getStockMovements(limit: 1000);
@@ -255,35 +286,14 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
           PopupMenuButton<String>(
             onSelected: (value) {
               switch (value) {
-                // case 'download':
-                //   _downloadReport(context, _reportData);
-                //   break;
-                // case 'share_email':
-                //   _shareViaEmail(context, _reportData); // now calls PDF share
-                //   break;
-                // case 'share_whatsapp':
-                //   _shareViaWhatsApp(
-                //       context, _reportData); // now calls PDF share
-                //   break;
                 case 'download':
-                  saveReportPdfFromState(
-                    context: context,
-                    reportData: _reportData!,
-                    categoryChartKey: _categoryChartKey,
-                    monthlyTrendsKey: _monthlyTrendsChartKey,
-                    themeColor: Theme.of(context).primaryColor,
-                  );
+                  ReportDownloadSheet.show(context);
                   break;
-
                 case 'share_email':
+                  _shareReport(ReportFormat.pdf);
+                  break;
                 case 'share_whatsapp':
-                  shareReportPdfFromState(
-                    context: context,
-                    reportData: _reportData!,
-                    categoryChartKey: _categoryChartKey,
-                    monthlyTrendsKey: _monthlyTrendsChartKey,
-                    themeColor: Theme.of(context).primaryColor,
-                  );
+                  _shareReport(ReportFormat.excel);
                   break;
               }
             },
