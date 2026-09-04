@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ConsultationUtils {
   static void showConsultationDialog(BuildContext context, {String? plan}) {
@@ -300,8 +301,7 @@ class ConsultationUtils {
                                 final preferredMethods = communicationMethods.entries
                                     .where((e) => e.value)
                                     .map((e) => e.key)
-                                    .join(', ');
-                                final selectedPlan = plan ?? 'Consultation Only';
+                                    .toList();
 
                                 // Validation (Basic)
                                 if (name.isEmpty || email.isEmpty) {
@@ -311,64 +311,36 @@ class ConsultationUtils {
                                   return;
                                 }
 
-                                final String body = '''
-Name: $name
-Email: $email
-Phone: $phone
-Company: $company
-Business Type: $businessType
-Role: $role
-Timeline: $timeline
-Preferred Communication: $preferredMethods
-Selected Plan: $selectedPlan
-                                ''';
+                                try {
+                                  await FirebaseFirestore.instance.collection('consultations').add({
+                                    'phone': phone,
+                                    'companyName': company,
+                                    'businessType': businessType,
+                                    'role': role,
+                                    'timeline': timeline,
+                                    'preferredContact': preferredMethods,
+                                    'submittedAt': FieldValue.serverTimestamp(),
+                                    'source': 'demo_mode',
+                                  });
 
-                                final Uri emailLaunchUri = Uri(
-                                  scheme: 'mailto',
-                                  path: 'stocksense@cloudora.live',
-                                  query: 'subject=${Uri.encodeComponent('New Consultation Request - $selectedPlan')}&body=${Uri.encodeComponent(body)}',
-                                );
-
-                                if (await canLaunchUrl(emailLaunchUri)) {
-                                  await launchUrl(emailLaunchUri);
-                                } else {
-                                  // Fallback or error handling
-                                  debugPrint('Could not launch email');
-                                }
-
-                                if (context.mounted) {
-                                  Navigator.of(context).pop(); // Close dialog
-
-                                  // Show Thank You Message
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => Dialog(
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(24.0),
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(Icons.check_circle_outline, color: Color(0xFFFF6B00), size: 64),
-                                            const SizedBox(height: 16),
-                                            Text('Thank You!', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
-                                            const SizedBox(height: 8),
-                                            Text('We\'ve received your request and will get back to you shortly.', textAlign: TextAlign.center, style: GoogleFonts.poppins()),
-                                            const SizedBox(height: 24),
-                                            ElevatedButton(
-                                              onPressed: () => Navigator.of(context).pop(),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: const Color(0xFFFF6B00),
-                                                foregroundColor: Colors.white,
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                              ),
-                                              child: const Text('Back to Home'),
-                                            )
-                                          ],
-                                        ),
+                                  if (context.mounted) {
+                                    Navigator.of(context).pop();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Thank you! Our team will be in touch.'),
+                                        backgroundColor: Colors.green,
                                       ),
-                                    )
-                                  );
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Error submitting consultation: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
                                 }
                               },
                               style: ElevatedButton.styleFrom(

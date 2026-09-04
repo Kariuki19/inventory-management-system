@@ -101,5 +101,11 @@ service cloud.firestore {
     match /images/{document} {
       allow read, write: if request.auth != null;
     }
+
+    // Consultations collection - anyone can create, only admins can read/update/delete
+    match /consultations/{docId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
   }
 }
