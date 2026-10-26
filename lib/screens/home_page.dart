@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import '../services/trial_service.dart';
+import '../widgets/trial_expired_dialog.dart';
+import '../widgets/upgrade_widgets.dart';
 import '../models/user_model.dart';
 import '../screens/inventory_list_screen.dart';
 import '../screens/dashboard_screen.dart';
@@ -23,6 +27,9 @@ class HomePageState extends State<HomePage> {
   AppUser? currentUser;
   bool isLoading = true;
 
+  Timer? _trialTimer;
+  bool _trialDialogShown = false;
+
   late final List<Widget> _pages;
 
   @override
@@ -40,6 +47,25 @@ class HomePageState extends State<HomePage> {
       const PredictionsScreen(),
       const ProfileScreen(),
     ];
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkTrialExpiry());
+    _trialTimer =
+        Timer.periodic(const Duration(seconds: 30), (_) => _checkTrialExpiry());
+  }
+
+  @override
+  void dispose() {
+    _trialTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkTrialExpiry() async {
+    if (_trialDialogShown || !mounted) return;
+    if (!await TrialService.isTrialExpired()) return;
+    if (!mounted) return;
+    _trialDialogShown = true;
+    _trialTimer?.cancel();
+    await TrialExpiredDialog.show(context, signedIn: true);
   }
 
   // keep your private helper
@@ -135,6 +161,26 @@ class HomePageState extends State<HomePage> {
       );
     }
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final isWide = MediaQuery.of(context).size.width >= 900;
+
+    // Keeps pages readable on large screens; phones are unaffected.
+    final content = LayoutBuilder(
+      builder: (context, constraints) {
+        final width =
+            constraints.maxWidth > 1200 ? 1200.0 : constraints.maxWidth;
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: width,
+            height: constraints.maxHeight,
+            child: IndexedStack(index: _currentIndex, children: _pages),
+          ),
+        );
+      },
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -145,6 +191,7 @@ class HomePageState extends State<HomePage> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          if (AuthService.isTrialSession) const UpgradeAppBarButton(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
@@ -166,7 +213,11 @@ class HomePageState extends State<HomePage> {
                         maxLines: 1,
                       ),
                       Text(
-                        currentUser?.isAdmin == true ? 'Admin' : 'Staff',
+                        AuthService.isTrialSession
+                            ? 'Free Trial'
+                            : (currentUser?.isAdmin == true
+                                ? 'Admin'
+                                : 'Staff'),
                         style: GoogleFonts.poppins(
                           fontSize: 10,
                           color: Colors.white70,
@@ -184,30 +235,65 @@ class HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages, // <- use the single list
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: _onTabSelected,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white
-            : Theme.of(context).primaryColor,
-        unselectedItemColor: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white54
-            : Colors.grey[600],
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? Theme.of(context).bottomNavigationBarTheme.backgroundColor
-            : null,
-        selectedLabelStyle: GoogleFonts.poppins(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-        unselectedLabelStyle: GoogleFonts.poppins(fontSize: 11),
-        items: _navItems,
-      ),
+      body: isWide
+          ? Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: _currentIndex,
+                  onDestinationSelected: _onTabSelected,
+                  labelType: NavigationRailLabelType.all,
+                  leading: AuthService.isTrialSession
+                      ? const UpgradeRailButton()
+                      : null,
+                  selectedIconTheme: IconThemeData(
+                      color: isDark ? Colors.white : theme.primaryColor),
+                  selectedLabelTextStyle: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white : theme.primaryColor,
+                  ),
+                  unselectedIconTheme: IconThemeData(
+                      color: isDark ? Colors.white54 : Colors.grey[600]),
+                  unselectedLabelTextStyle: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: isDark ? Colors.white54 : Colors.grey[600],
+                  ),
+                  destinations: [
+                    for (final item in _navItems)
+                      NavigationRailDestination(
+                        icon: item.icon,
+                        label: Text(item.label ?? ''),
+                      ),
+                  ],
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(child: content),
+              ],
+            )
+          : content,
+      bottomNavigationBar: isWide
+          ? null
+          : BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: _onTabSelected,
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Theme.of(context).primaryColor,
+              unselectedItemColor:
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white54
+                      : Colors.grey[600],
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? Theme.of(context).bottomNavigationBarTheme.backgroundColor
+                  : null,
+              selectedLabelStyle: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+              unselectedLabelStyle: GoogleFonts.poppins(fontSize: 11),
+              items: _navItems,
+            ),
     );
   }
 
@@ -225,13 +311,9 @@ class HomePageState extends State<HomePage> {
                 ? Colors.white.withValues(alpha: 0.2)
                 : Colors.grey.withValues(alpha: 0.3),
             backgroundImage: MemoryImage(bytes),
-            onBackgroundImageError: (exception, stackTrace) {
-
-            },
+            onBackgroundImageError: (exception, stackTrace) {},
           );
-        } catch (e) {
-
-        }
+        } catch (e) {}
       } else {
         // Handle network URLs
         return CircleAvatar(
@@ -240,9 +322,7 @@ class HomePageState extends State<HomePage> {
               ? Colors.white.withValues(alpha: 0.2)
               : Colors.grey.withValues(alpha: 0.3),
           backgroundImage: NetworkImage(currentUser!.profilePhotoPath!),
-          onBackgroundImageError: (exception, stackTrace) {
-
-          },
+          onBackgroundImageError: (exception, stackTrace) {},
         );
       }
     }

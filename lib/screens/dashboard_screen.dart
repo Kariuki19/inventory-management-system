@@ -18,6 +18,8 @@ import '../widgets/expiry_alert_card.dart';
 import '../widgets/welcome_card.dart';
 import '../services/notification_service.dart';
 import '../utils/date_utils.dart' as CustomDateUtils;
+import '../config/currency_config.dart';
+import '../widgets/upgrade_widgets.dart';
 import 'inventory_form_screen.dart';
 import 'qr_scanner_screen.dart';
 import 'expiry_alerts_screen.dart';
@@ -188,26 +190,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildTrialBanner() {
+    // Only free-trial visitors see this; full accounts never do.
+    if (!AuthService.isTrialSession) return const SizedBox.shrink();
+
     return FutureBuilder<int>(
       future: TrialService.getRemainingDays(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const SizedBox.shrink();
-        
+
         final daysLeft = snapshot.data!;
-        // The user only sees this if trial is not expired (handled by SplashScreen)
         final isWarning = daysLeft < 3;
-        
-        final backgroundColor = isWarning 
-            ? const Color(0xFFFF4D4D).withValues(alpha: 0.1) // Subtle red
-            : const Color(0xFFFF6B00).withValues(alpha: 0.1); // Cloudora Orange
-        
-        final textColor = isWarning 
-            ? const Color(0xFFFF4D4D) 
-            : const Color(0xFFFF6B00);
-            
+
+        final backgroundColor = isWarning
+            ? const Color(0xFFFF4D4D).withValues(alpha: 0.1)
+            : const Color(0xFFFF6B00).withValues(alpha: 0.1);
+        final textColor =
+            isWarning ? const Color(0xFFFF4D4D) : const Color(0xFFFF6B00);
+
         return Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(12),
@@ -219,12 +221,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Your Free Trial ends in $daysLeft days',
+                  daysLeft <= 0
+                      ? 'Your free trial ends today'
+                      : 'Your free trial ends in $daysLeft ${daysLeft == 1 ? 'day' : 'days'}',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: textColor,
                   ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () => UpgradeSheet.show(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: textColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  minimumSize: const Size(0, 36),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                ),
+                child: Text(
+                  'Upgrade',
+                  style: GoogleFonts.poppins(
+                      fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -429,7 +452,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   'Total Value',
                   // Format as currency with proper formatting
                   _formatCurrency(dashboardStats['totalValue']),
-                  Icons.attach_money,
+                  Icons.payments_outlined,
                   Colors.green,
                   dashboardStats,
                 ),
@@ -458,97 +481,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String _formatCurrency(dynamic value) {
-    // Handle null or non-numeric values
-    if (value == null) return '\$0.00';
-
-    // Convert to double if possible
-    double numericValue;
-    if (value is num) {
-      numericValue = value.toDouble();
-    } else {
-      try {
-        numericValue = double.parse(value.toString());
-      } catch (_) {
-        return '\$0.00';
-      }
-    }
-
+    if (value == null) return AppCurrency.format(0);
+    final numericValue = value is num
+        ? value.toDouble()
+        : (double.tryParse(value.toString()) ?? 0);
     return _formatLargeNumber(numericValue, isCurrency: true);
   }
 
   String _formatLargeNumber(double value, {bool isCurrency = false}) {
-    final prefix = isCurrency ? '\$' : '';
-
-    if (value >= 1000000000) {
-      // Billions
-      final billions = value / 1000000000;
-      if (billions >= 100) {
-        return '$prefix${billions.toInt()}B+';
-      } else if (billions >= 10) {
-        return '$prefix${billions.toStringAsFixed(0)}B+';
-      } else {
-        return '$prefix${billions.toStringAsFixed(1)}B+';
-      }
-    } else if (value >= 1000000) {
-      // Millions
-      final millions = value / 1000000;
-      if (millions >= 100) {
-        return '$prefix${millions.toInt()}M+';
-      } else if (millions >= 10) {
-        return '$prefix${millions.toStringAsFixed(0)}M+';
-      } else {
-        return '$prefix${millions.toStringAsFixed(1)}M+';
-      }
-    } else if (value >= 1000) {
-      // Thousands
-      final thousands = value / 1000;
-      if (thousands >= 100) {
-        return '$prefix${thousands.toInt()}K+';
-      } else if (thousands >= 10) {
-        return '$prefix${thousands.toStringAsFixed(0)}K+';
-      } else {
-        return '$prefix${thousands.toStringAsFixed(1)}K+';
-      }
-    } else {
-      // Less than 1000 - show full number
-      if (isCurrency) {
-        final formatter = NumberFormat.currency(
-          symbol: '\$',
-          decimalDigits: 2,
-        );
-        return formatter.format(value);
-      } else {
-        return value.toInt().toString();
-      }
-    }
+    // Full numbers with thousands separators: KES 3,000 / KES 3,000,000.
+    return isCurrency
+        ? AppCurrency.format(value)
+        : NumberFormat('#,##0').format(value.toInt());
   }
 
   String _getFullFormattedValue(dynamic value, {bool isCurrency = false}) {
-    // Handle null or non-numeric values
-    if (value == null) return isCurrency ? '\$0.00' : '0';
-
-    // Convert to double if possible
-    double numericValue;
-    if (value is num) {
-      numericValue = value.toDouble();
-    } else {
-      try {
-        numericValue = double.parse(value.toString());
-      } catch (_) {
-        return isCurrency ? '\$0.00' : '0';
-      }
-    }
-
-    if (isCurrency) {
-      final formatter = NumberFormat.currency(
-        symbol: '\$',
-        decimalDigits: 2,
-      );
-      return formatter.format(numericValue);
-    } else {
-      final formatter = NumberFormat('#,###');
-      return formatter.format(numericValue.toInt());
-    }
+    if (value == null) return isCurrency ? AppCurrency.format(0) : '0';
+    final numericValue = value is num
+        ? value.toDouble()
+        : (double.tryParse(value.toString()) ?? 0);
+    return isCurrency
+        ? AppCurrency.format(numericValue)
+        : NumberFormat('#,###').format(numericValue.toInt());
   }
 
   Widget _buildStatCard(
@@ -564,12 +518,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Get the full formatted value for tooltip
     String fullValue = value;
     if (title == 'Total Value') {
-      // Format as currency with proper formatting for tooltip
-      final formatter = NumberFormat.currency(
-        symbol: '\$',
-        decimalDigits: 2,
-      );
-      fullValue = formatter.format(dashboardStats['totalValue']);
+      fullValue = AppCurrency.format(dashboardStats['totalValue'] ?? 0);
     } else if (title == 'Total Items') {
       // Show integer value only for Total Items tooltip
       fullValue = (dashboardStats['totalItems'] as int).toString();
@@ -653,7 +602,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         const SizedBox(height: 12),
-
         LayoutBuilder(
           builder: (context, constraints) {
             // Create list of all quick actions
@@ -676,7 +624,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ]);
 
             // Add admin-only actions
-            if (currentUser?.isAdmin == true) {
+            if (AuthService.canManageInventory) {
               quickActions.insertAll(0, [
                 _buildQuickActionButton(
                   'Add Item',
@@ -707,6 +655,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     );
                   },
+                ),
+              );
+            }
+
+            if (AuthService.isTrialSession) {
+              quickActions.add(
+                _buildQuickActionButton(
+                  'Upgrade Plan',
+                  Icons.workspace_premium_outlined,
+                  Colors.deepOrange,
+                  () => UpgradeSheet.show(context),
                 ),
               );
             }
@@ -1103,8 +1062,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: Text(
                         'Error loading items',
                         style: GoogleFonts.poppins(
-                          color:
-                              isDark ? Colors.white60 : Colors.grey.shade600,
+                          color: isDark ? Colors.white60 : Colors.grey.shade600,
                         ),
                       ),
                     );
@@ -1117,8 +1075,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       child: Text(
                         'No items found',
                         style: GoogleFonts.poppins(
-                          color:
-                              isDark ? Colors.white60 : Colors.grey.shade600,
+                          color: isDark ? Colors.white60 : Colors.grey.shade600,
                         ),
                       ),
                     );
@@ -1134,8 +1091,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         final item = items[index];
                         final daysUntilExpiry = item.daysUntilExpiry ?? 0;
                         final statusColor = _getExpiryColor(daysUntilExpiry);
-                        final statusText = CustomDateUtils.DateUtils
-                            .formatExpiryStatus(daysUntilExpiry);
+                        final statusText =
+                            CustomDateUtils.DateUtils.formatExpiryStatus(
+                                daysUntilExpiry);
 
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.center,

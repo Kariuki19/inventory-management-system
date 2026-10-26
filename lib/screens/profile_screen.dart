@@ -5,12 +5,15 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/trial_service.dart';
 import '../services/unified_image_service.dart';
 import 'admin_user_management_screen.dart';
 import 'notification_settings_screen.dart';
 import 'system_reports_screen.dart';
 import 'help_support_screen.dart';
 import '../screens/home_page.dart';
+import '../utils/feedback_utils.dart';
+import '../widgets/upgrade_widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -74,7 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      // Get the current user from AuthService
+      // Get the current user from Authservice
       final user = await AuthService.getCurrentUserFromFirestore();
 
       if (mounted) {
@@ -84,7 +87,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
-
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -418,6 +420,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 20),
 
+                  if (AuthService.isTrialSession) ...[
+                    const UpgradeCard(),
+                    const SizedBox(height: 20),
+                  ],
+
                   // Settings Section
                   _buildSettingsSection(),
 
@@ -475,7 +482,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 'Full Name', currentUser?.displayName ?? 'Not provided'),
             _buildInfoRow('Email', currentUser?.email ?? 'Not available'),
             _buildInfoRow(
-                'Role', currentUser?.isAdmin == true ? 'Admin' : 'Staff'),
+                'Role',
+                AuthService.isTrialSession
+                    ? 'Free Trial'
+                    : (currentUser?.isAdmin == true ? 'Admin' : 'Staff')),
             if (currentUser?.isAdmin == true &&
                 currentUser?.organizationId != null)
               _buildInfoRow('Organization ID', currentUser!.organizationId!),
@@ -1037,30 +1047,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showSignOutConfirmation() {
+    final isTrial = AuthService.isTrialSession;
+    var feedbackOpened = false;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Sign Out'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(isTrial
+                  ? 'Your free trial keeps running and your items stay saved on this browser. '
+                      'Tap Start Free Trial on the home page to come back.\n\n'
+                      'Before you go, we would love your feedback.'
+                  : 'Are you sure you want to sign out?'),
+              if (isTrial && feedbackOpened) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  'Thank you! Once you have submitted the form, close its tab '
+                  'and come back here to finish signing out.',
+                  style: TextStyle(fontStyle: FontStyle.italic),
+                ),
+              ],
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => _signOut(),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child:
-                const Text('Sign Out', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+          actions: [
+            if (isTrial)
+              TextButton.icon(
+                onPressed: () async {
+                  final opened = await FeedbackUtils.openFeedbackForm(context);
+                  if (opened && dialogContext.mounted) {
+                    setDialogState(() => feedbackOpened = true);
+                  }
+                },
+                icon: const Icon(Icons.rate_review_outlined, size: 18),
+                label: const Text('Give feedback'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => _signOut(),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child:
+                  const Text('Sign Out', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   void _signOut() async {
     try {
-      await AuthService.signOut();
+      if (AuthService.isTrialSession) {
+        await TrialService
+            .leaveTrial(); // keeps the trial account and start date
+      } else {
+        await AuthService.signOut();
+      }
       Navigator.pop(context);
       if (mounted) {
         Navigator.of(context).pushReplacementNamed('/');
@@ -1151,13 +1200,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ? Colors.grey.withValues(alpha: 0.3)
                     : Colors.grey.withValues(alpha: 0.1)),
             backgroundImage: MemoryImage(bytes),
-            onBackgroundImageError: (exception, stackTrace) {
-
-            },
+            onBackgroundImageError: (exception, stackTrace) {},
           );
-        } catch (e) {
-
-        }
+        } catch (e) {}
       } else {
         // Handle network URLs
         return CircleAvatar(
@@ -1169,9 +1214,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ? Colors.grey.withValues(alpha: 0.3)
                   : Colors.grey.withValues(alpha: 0.1)),
           backgroundImage: NetworkImage(user.profilePhotoPath!),
-          onBackgroundImageError: (exception, stackTrace) {
-
-          },
+          onBackgroundImageError: (exception, stackTrace) {},
         );
       }
     }
