@@ -2,82 +2,87 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:inventory_management_system/services/trial_policy.dart';
 
 void main() {
-  final start = DateTime.utc(2026, 10, 1, 9, 30);
-  const day = Duration(days: 1);
+  final start = DateTime.utc(2026, 11, 10, 9, 30);
+  const minute = Duration(minutes: 1);
   const second = Duration(seconds: 1);
+  const hour = Duration(hours: 1);
 
-  group('trial length', () {
-    test('is 14 days', () => expect(TrialPolicy.durationDays, 14));
+  group('demo length', () {
+    test('is exactly one hour', () => expect(TrialPolicy.duration, hour));
 
-    test('expiry is exactly 14 days after the stored trialStartDate', () {
-      expect(TrialPolicy.expiryOf(start), DateTime.utc(2026, 10, 15, 9, 30));
+    test('expiry is one hour after the stored start', () {
+      expect(TrialPolicy.expiryOf(start), DateTime.utc(2026, 11, 10, 10, 30));
     });
 
-    test('active at the start and on day 13', () {
+    test('active at the start and after 59 minutes', () {
       expect(TrialPolicy.evaluate(start, start), TrialStatus.active);
-      expect(
-          TrialPolicy.evaluate(start, start.add(day * 13)), TrialStatus.active);
-    });
-
-    test('active one second before 14 days', () {
-      expect(TrialPolicy.evaluate(start, start.add(day * 14 - second)),
+      expect(TrialPolicy.evaluate(start, start.add(minute * 59)),
           TrialStatus.active);
     });
 
-    test('expired at exactly 14 days', () {
-      expect(TrialPolicy.evaluate(start, start.add(day * 14)),
-          TrialStatus.expired);
+    test('active one second before the hour', () {
+      expect(TrialPolicy.evaluate(start, start.add(hour - second)),
+          TrialStatus.active);
     });
 
-    test('expired one second after 14 days and long after', () {
-      expect(TrialPolicy.evaluate(start, start.add(day * 14 + second)),
+    test('expired at exactly one hour', () {
+      expect(TrialPolicy.evaluate(start, start.add(hour)), TrialStatus.expired);
+    });
+
+    test('expired one second after the hour and long after', () {
+      expect(TrialPolicy.evaluate(start, start.add(hour + second)),
           TrialStatus.expired);
-      expect(TrialPolicy.evaluate(start, start.add(day * 60)),
+      expect(TrialPolicy.evaluate(start, start.add(const Duration(days: 3))),
           TrialStatus.expired);
     });
   });
 
   group('validation', () {
-    test('missing start date is invalid', () {
+    test('missing start is invalid', () {
       expect(TrialPolicy.evaluate(null, start), TrialStatus.invalid);
     });
 
-    test('start date far in the future is invalid', () {
-      expect(
-          TrialPolicy.evaluate(start.add(day * 2), start), TrialStatus.invalid);
+    test('a start far in the future is invalid', () {
+      expect(TrialPolicy.evaluate(start.add(hour * 2), start),
+          TrialStatus.invalid);
     });
 
-    test('small clock skew is tolerated', () {
-      expect(
-          TrialPolicy.evaluate(start.add(const Duration(minutes: 30)), start),
+    test('a small clock difference is tolerated, a large one is not', () {
+      expect(TrialPolicy.evaluate(start.add(minute * 10), start),
           TrialStatus.active);
+      expect(TrialPolicy.evaluate(start.add(minute * 30), start),
+          TrialStatus.invalid);
     });
   });
 
-  group('days remaining', () {
+  group('time remaining', () {
     test('counts down and never goes negative', () {
-      expect(TrialPolicy.remainingDays(start, start), 14);
-      expect(TrialPolicy.remainingDays(start, start.add(day)), 13);
-      expect(TrialPolicy.remainingDays(start, start.add(day * 13)), 1);
-      expect(TrialPolicy.remainingDays(start, start.add(day * 14 - second)), 1);
-      expect(TrialPolicy.remainingDays(start, start.add(day * 14)), 0);
-      expect(TrialPolicy.remainingDays(start, start.add(day * 20)), 0);
+      expect(TrialPolicy.remaining(start, start), hour);
+      expect(TrialPolicy.remaining(start, start.add(minute * 15)),
+          const Duration(minutes: 45));
+      expect(TrialPolicy.remaining(start, start.add(hour - second)), second);
+      expect(TrialPolicy.remaining(start, start.add(hour)), Duration.zero);
+      expect(TrialPolicy.remaining(start, start.add(hour * 3)), Duration.zero);
+    });
+
+    test('never shows more than the full hour', () {
+      expect(TrialPolicy.remaining(start.add(minute * 10), start), hour);
     });
   });
 
-  group('logout / new account cannot restart the trial', () {
-    test('the earlier start date always wins', () {
-      final newerAccountStart = start.add(day * 3);
-      expect(TrialPolicy.earliest(start, newerAccountStart), start);
-      expect(TrialPolicy.earliest(newerAccountStart, start), start);
+  group('logout / new account cannot restart the demo', () {
+    test('the earlier start always wins', () {
+      final newer = start.add(minute * 30);
+      expect(TrialPolicy.earliest(start, newer), start);
+      expect(TrialPolicy.earliest(newer, start), start);
       expect(TrialPolicy.earliest(null, start), start);
       expect(TrialPolicy.earliest(start, null), start);
       expect(TrialPolicy.earliest(null, null), isNull);
     });
 
-    test('a later account start does not extend the trial', () {
-      final effective = TrialPolicy.earliest(start, start.add(day * 3));
-      expect(TrialPolicy.evaluate(effective, start.add(day * 14)),
+    test('a later account start does not extend the demo', () {
+      final effective = TrialPolicy.earliest(start, start.add(minute * 30));
+      expect(TrialPolicy.evaluate(effective, start.add(hour)),
           TrialStatus.expired);
     });
   });

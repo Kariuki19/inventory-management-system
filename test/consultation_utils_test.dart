@@ -15,7 +15,7 @@ void main() {
 
   test('request body carries the plan and skips empty optional fields', () {
     final body = ConsultationRequest.buildBody(
-      plan: 'Mid',
+      plan: 'Pro',
       name: 'Wanjiku Mwangi',
       email: 'wanjiku@example.com',
       phone: '0712345678',
@@ -23,27 +23,29 @@ void main() {
       timeline: 'Immediately',
       contactMethods: ['Email', 'WhatsApp'],
     );
-    expect(body, contains('Plan: Mid'));
+    expect(body, contains('Plan: Pro'));
     expect(body, contains('Preferred contact: Email, WhatsApp'));
     expect(body, isNot(contains('Company:')));
-    expect(body, isNot(contains('Trial')));
+    expect(body, isNot(contains('Demo minutes')));
   });
 
-  test('trial requests include days left and the workspace reference', () {
+  test('demo requests include minutes left, team size and the reference', () {
     final body = ConsultationRequest.buildBody(
-      plan: 'Entry',
+      plan: 'Pro',
+      teamSize: '10–15 users (\$80/month)',
       name: 'A B',
       email: 'a@b.co',
       phone: '0712345678',
       role: 'Manager',
       timeline: 'Just exploring',
       contactMethods: ['Phone'],
-      source: 'In-app (free trial)',
-      trialDaysLeft: 6,
+      source: 'In-app (demo)',
+      trialMinutesLeft: 25,
       trialReference: 'abc123',
     );
-    expect(body, contains('Source: In-app (free trial)'));
-    expect(body, contains('Trial days left: 6'));
-    expect(body, contains('Trial reference: abc123'));
+    expect(body, contains('Source: In-app (demo)'));
+    expect(body, contains('Team size: 10–15 users (\$80/month)'));
+    expect(body, contains('Demo minutes left: 25'));
+    expect(body, contains('Demo reference: abc123'));
   });
 }

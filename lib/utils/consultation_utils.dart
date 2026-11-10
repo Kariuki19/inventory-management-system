@@ -4,6 +4,7 @@ import '../config/contact_config.dart';
 import '../services/auth_service.dart';
 import '../services/trial_service.dart';
 import 'email_handoff.dart';
+import '../config/plans_config.dart';
 
 class ConsultationUtils {
   /// Opens the request form. [plan] is the plan the visitor chose (Entry, Mid, High).
@@ -42,6 +43,7 @@ class ConsultationValidators {
 class ConsultationRequest {
   static String buildBody({
     required String plan,
+    String? teamSize,
     required String name,
     required String email,
     required String phone,
@@ -51,11 +53,12 @@ class ConsultationRequest {
     required String timeline,
     required List<String> contactMethods,
     String source = 'Website',
-    int? trialDaysLeft,
+    int? trialMinutesLeft,
     String? trialReference,
   }) {
     final lines = <String>[
       'Plan: $plan',
+      if (teamSize != null && teamSize.isNotEmpty) 'Team size: $teamSize',
       'Name: $name',
       'Email: $email',
       'Phone: $phone',
@@ -66,9 +69,9 @@ class ConsultationRequest {
       'Wants to start: $timeline',
       'Preferred contact: ${contactMethods.join(', ')}',
       'Source: $source',
-      if (trialDaysLeft != null) 'Trial days left: $trialDaysLeft',
+      if (trialMinutesLeft != null) 'Demo minutes left: $trialMinutesLeft',
       if (trialReference != null && trialReference.isNotEmpty)
-        'Trial reference: $trialReference',
+        'Demo reference: $trialReference',
     ];
     return lines.join('\n');
   }
@@ -107,15 +110,16 @@ class _ConsultationDialogState extends State<_ConsultationDialog> {
   final Set<String> _selectedMethods = {};
   bool _showChoiceErrors = false;
   bool _submitting = false;
-  int? _trialDaysLeft;
+  int? _trialMinutesLeft;
+  String? _teamSize;
 
   @override
   void initState() {
     super.initState();
     final user = AuthService.currentUser;
     if (AuthService.isTrialSession) {
-      TrialService.getRemainingDays().then((days) {
-        if (mounted) _trialDaysLeft = days;
+      TrialService.getRemaining().then((left) {
+        if (mounted) _trialMinutesLeft = left.inMinutes;
       });
     } else if (user != null) {
       if (user.displayName.isNotEmpty) _name.text = user.displayName;
@@ -153,9 +157,10 @@ class _ConsultationDialogState extends State<_ConsultationDialog> {
       businessType: _businessType.text,
       role: _role!,
       timeline: _timeline,
+      teamSize: _teamSize,
       contactMethods: _methods.where(_selectedMethods.contains).toList(),
       source: isTrial ? 'In-app (free trial)' : 'Website',
-      trialDaysLeft: isTrial ? _trialDaysLeft : null,
+      trialMinutesLeft: isTrial ? _trialMinutesLeft : null,
       trialReference: isTrial ? AuthService.currentUser?.id : null,
     );
 
@@ -303,6 +308,35 @@ class _ConsultationDialogState extends State<_ConsultationDialog> {
           ),
           if (_showChoiceErrors && _role == null)
             _errorText('Please choose your role'),
+          if (widget.plan != null) ...[
+            const SizedBox(height: 24),
+            _sectionTitle('Team size'),
+            const SizedBox(height: 4),
+            Text('How many people will use StockSense?',
+                style: GoogleFonts.poppins(fontSize: 12, color: _muted)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                for (final tier in PlansConfig.plans
+                    .where((p) => p.name == widget.plan)
+                    .expand((p) => p.tiers))
+                  _choice(
+                    label: '${tier.users} · ${tier.priceUsd}/month',
+                    selected:
+                        _teamSize == '${tier.users} (${tier.priceUsd}/month)',
+                    onTap: () => setState(() =>
+                        _teamSize = '${tier.users} (${tier.priceUsd}/month)'),
+                  ),
+                _choice(
+                  label: 'Not sure yet',
+                  selected: _teamSize == 'Not sure yet',
+                  onTap: () => setState(() => _teamSize = 'Not sure yet'),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 24),
           _sectionTitle('When would you like to start? *'),
           const SizedBox(height: 12),

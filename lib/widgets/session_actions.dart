@@ -21,8 +21,8 @@ class SessionActions {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(isTrial
-                  ? 'Your free trial keeps running and your items stay saved on this browser. '
-                      'Tap Start Free Trial on the home page to come back.\n\n'
+                  ? 'Your demo keeps running until the hour is up, and your items stay saved on this browser. '
+                      'Tap Start a Demo on the home page to come back.\n\n'
                       'Before you go, we would love your feedback.'
                   : 'Are you sure you want to sign out?'),
               if (isTrial && feedbackOpened) ...[

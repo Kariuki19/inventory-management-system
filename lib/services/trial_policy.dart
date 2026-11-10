@@ -1,11 +1,13 @@
 enum TrialStatus { active, expired, invalid }
 
 class TrialPolicy {
-  static const int durationDays = 14;
-  static const Duration duration = Duration(days: durationDays);
-  static const Duration maxClockSkew = Duration(hours: 1);
+  /// The demo lasts exactly one hour from the moment it starts.
+  static const Duration duration = Duration(hours: 1);
 
-  /// The trial ends exactly [duration] after [start].
+  /// How far in the future a start time may be before it is rejected.
+  static const Duration maxClockSkew = Duration(minutes: 15);
+
+  /// The demo ends exactly [duration] after [start].
   static DateTime expiryOf(DateTime start) => start.add(duration);
 
   static TrialStatus evaluate(DateTime? start, DateTime now) {
@@ -16,14 +18,14 @@ class TrialPolicy {
         : TrialStatus.active;
   }
 
-  static int remainingDays(DateTime start, DateTime now) {
+  /// Time left: never negative and never more than the full hour.
+  static Duration remaining(DateTime start, DateTime now) {
     final left = expiryOf(start).difference(now);
-    if (left <= Duration.zero) return 0;
-    final days = (left.inSeconds / Duration.secondsPerDay).ceil();
-    return days > durationDays ? durationDays : days;
+    if (left <= Duration.zero) return Duration.zero;
+    return left > duration ? duration : left;
   }
 
-  /// A start date can only move earlier, never later.
+  /// A start time can only move earlier, never later.
   static DateTime? earliest(DateTime? a, DateTime? b) {
     if (a == null) return b;
     if (b == null) return a;

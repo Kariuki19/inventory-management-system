@@ -7,7 +7,6 @@ export 'trial_policy.dart';
 class TrialService {
   static const String _startKey = 'trial_start_ms';
   static const String _legacyKey = 'first_launch_date';
-  static const int trialDurationDays = TrialPolicy.durationDays;
 
   static Future<DateTime?> _storedStart() async {
     final prefs = await SharedPreferences.getInstance();
@@ -42,10 +41,11 @@ class TrialService {
   static Future<DateTime> getFirstLaunchDate() async =>
       (await _effectiveStart()) ?? DateTime.now();
 
-  static Future<int> getRemainingDays() async {
+  /// Time left in the demo (a missing start counts as the full hour).
+  static Future<Duration> getRemaining() async {
     final start = await _effectiveStart();
-    if (start == null) return TrialPolicy.durationDays;
-    return TrialPolicy.remainingDays(start, DateTime.now());
+    if (start == null) return TrialPolicy.duration;
+    return TrialPolicy.remaining(start, DateTime.now());
   }
 
   /// True when this browser already used up a full trial.
@@ -80,7 +80,7 @@ class TrialService {
 
     final start = (await _effectiveStart()) ?? DateTime.now();
     final status = TrialPolicy.evaluate(start, DateTime.now());
-        if (status != TrialStatus.invalid) await _persistStart(start);
+    if (status != TrialStatus.invalid) await _persistStart(start);
     if (status != TrialStatus.active) {
       await AuthService.signOut();
       return status;
