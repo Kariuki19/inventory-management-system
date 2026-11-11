@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../services/inventory_service.dart';
 import '../services/auth_service.dart';
-import '../services/trial_service.dart';
 import '../services/expiry_notification_service.dart';
 import '../models/user_model.dart';
 import '../providers/theme_provider.dart';
@@ -22,6 +21,7 @@ import 'qr_scanner_screen.dart';
 import 'expiry_alerts_screen.dart';
 import '../widgets/user_avatar.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../widgets/demo_countdown_banner.dart';
 
 class DashboardScreen extends StatefulWidget {
   final ValueChanged<int> onTabSelected;
@@ -195,71 +195,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildTrialBanner() {
-    // Only free-trial visitors see this; full accounts never do.
+    // Only demo visitors see this; full accounts never do.
     if (!AuthService.isTrialSession) return const SizedBox.shrink();
-
-    return FutureBuilder<int>(
-      future: TrialService.getRemainingDays(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox.shrink();
-
-        final daysLeft = snapshot.data!;
-        final isWarning = daysLeft < 3;
-
-        final backgroundColor = isWarning
-            ? const Color(0xFFFF4D4D).withValues(alpha: 0.1)
-            : const Color(0xFFFF6B00).withValues(alpha: 0.1);
-        final textColor =
-            isWarning ? const Color(0xFFFF4D4D) : const Color(0xFFFF6B00);
-
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: textColor.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.timer_outlined, size: 20, color: textColor),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  daysLeft <= 0
-                      ? 'Your free trial ends today'
-                      : 'Your free trial ends in $daysLeft ${daysLeft == 1 ? 'day' : 'days'}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: textColor,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () => UpgradeSheet.show(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: textColor,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  minimumSize: const Size(0, 36),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                ),
-                child: Text(
-                  'Upgrade',
-                  style: GoogleFonts.poppins(
-                      fontSize: 12, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    return const DemoCountdownBanner();
   }
 
   String _getFirstName(String name) {
@@ -415,7 +353,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String _formatCurrency(dynamic value) {
-    if (value == null) return AppCurrency.format(0);
+    if (value == null) return AppCurrency.formatBoth(0);
     final numericValue = value is num
         ? value.toDouble()
         : (double.tryParse(value.toString()) ?? 0);
@@ -425,17 +363,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _formatLargeNumber(double value, {bool isCurrency = false}) {
     // Full numbers with thousands separators: KES 3,000 / KES 3,000,000.
     return isCurrency
-        ? AppCurrency.format(value)
+        ? AppCurrency.formatBoth(value)
         : NumberFormat('#,##0').format(value.toInt());
   }
 
   String _getFullFormattedValue(dynamic value, {bool isCurrency = false}) {
-    if (value == null) return isCurrency ? AppCurrency.format(0) : '0';
+    if (value == null) return isCurrency ? AppCurrency.formatBoth(0) : '0';
     final numericValue = value is num
         ? value.toDouble()
         : (double.tryParse(value.toString()) ?? 0);
     return isCurrency
-        ? AppCurrency.format(numericValue)
+        ? AppCurrency.formatBoth(numericValue)
         : NumberFormat('#,###').format(numericValue.toInt());
   }
 
@@ -450,7 +388,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Full value for the tooltip
     String fullValue = value;
     if (title == 'Total Value') {
-      fullValue = AppCurrency.format(dashboardStats['totalValue'] ?? 0);
+      fullValue = AppCurrency.formatBoth(dashboardStats['totalValue'] ?? 0);
     } else if (title == 'Total Items') {
       fullValue = _getFullFormattedValue(dashboardStats['totalItems']);
     } else if (title == 'Low Stock') {
@@ -462,10 +400,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final isSmallScreen = MediaQuery.of(context).size.width < 400;
     final tooltipMessage = isSmallScreen ? fullValue : '$title: $fullValue';
 
+    final displayTitle = title == 'Total Value'
+        ? 'Total Value · ${AppCurrency.usd(dashboardStats['totalValue'] ?? 0)}'
+        : title;
+
     return Tooltip(
       message: tooltipMessage,
       child: StatCard(
-        title: title,
+        title: displayTitle,
         value: value,
         icon: icon,
         color: color,

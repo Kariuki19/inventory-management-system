@@ -149,7 +149,7 @@ class InventoryCard extends StatelessWidget {
                             const SizedBox(width: 12),
                             // Price
                             Text(
-                              AppCurrency.format(item.unitPrice),
+                              AppCurrency.formatBoth(item.unitPrice),
                               style: GoogleFonts.poppins(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,

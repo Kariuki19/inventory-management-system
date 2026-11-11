@@ -76,7 +76,7 @@ class _TrialExpiredContentState extends State<_TrialExpiredContent> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Your free trial has ended',
+              'Your demo has ended',
               style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w600, fontSize: 18),
             ),
@@ -88,10 +88,10 @@ class _TrialExpiredContentState extends State<_TrialExpiredContent> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Your 14-day free trial of StockSense is over. To keep using the app, '
-            'upgrade to a full plan and our team will help you get set up.\n\n'
+            'Your one-hour StockSense demo is over. To keep using the app, '
+            'choose a plan and our team will help you get set up.\n\n'
             'Before you log out, you can download your items and stock history as CSV files to keep.\n\n'
-            'We would also love to hear how the trial went.',
+            'We would also love to hear how the demo went.',
             style: GoogleFonts.poppins(fontSize: 14, height: 1.5),
           ),
           if (_feedbackOpened) ...[

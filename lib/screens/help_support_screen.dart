@@ -28,7 +28,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
     FAQItem(
       question: 'How will I know when stock is low or expiring?',
       answer:
-          'Low-stock and out-of-stock items are flagged on your dashboard and in the Items list, and expiring or expired items appear in Expiry Alerts. During the free trial, alerts are shown inside the app. Email alerts are not part of the trial.',
+          'Low-stock and out-of-stock items are flagged on your dashboard and in the Items list, and expiring or expired items appear in Expiry Alerts. During the demo, alerts are shown inside the app. Email alerts are not part of the trial.',
     ),
     FAQItem(
       question: 'What are reorder levels?',
@@ -504,7 +504,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   }) async {
     final user = AuthService.currentUser;
     final who = AuthService.isTrialSession
-        ? 'Free trial workspace ${user?.id ?? 'unknown'}'
+        ? 'Demo workspace ${user?.id ?? 'unknown'}'
         : ((user?.email ?? '').isNotEmpty ? user!.email : 'Not signed in');
 
     final body = [
@@ -584,7 +584,7 @@ class UserGuideScreen extends StatelessWidget {
               children: [
                 _buildGuideSection(
                     context, 'Getting Started', Icons.play_arrow, [
-                  'Tap Start Free Trial on the home page. No sign-up or password is needed.',
+                  'Tap Start Demo on the home page. No sign-up or password is needed.',
                   'Explore the dashboard for your stock overview and quick actions.',
                   'Move between the Home, Items, Stock, Predict and Profile tabs.',
                 ]),

@@ -53,7 +53,7 @@ class HomePageState extends State<HomePage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkTrialExpiry());
     _trialTimer =
-        Timer.periodic(const Duration(seconds: 30), (_) => _checkTrialExpiry());
+        Timer.periodic(const Duration(seconds: 10), (_) => _checkTrialExpiry());
   }
 
   @override
@@ -273,9 +273,8 @@ class HomePageState extends State<HomePage> {
     final isDefaultTrialName = isTrial && displayName == 'Trial User';
     final primaryLine =
         isDefaultTrialName ? 'Guest' : _getFirstName(displayName);
-    final roleLine = isTrial
-        ? 'Free Trial'
-        : (currentUser?.isAdmin == true ? 'Admin' : 'Staff');
+    final roleLine =
+        isTrial ? 'Demo' : (currentUser?.isAdmin == true ? 'Admin' : 'Staff');
     final showNames = MediaQuery.of(context).size.width >= 600;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 

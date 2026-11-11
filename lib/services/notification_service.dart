@@ -202,7 +202,7 @@ class NotificationService {
                 <h3 style="margin: 0 0 10px 0; color: #495057;">${item.name}</h3>
                 <p style="margin: 5px 0;"><strong>Category:</strong> ${item.category}</p>
                 <p style="margin: 5px 0;"><strong>Quantity:</strong> ${item.quantity} unit${item.quantity == 1 ? '' : 's'}</p>
-                <p style="margin: 5px 0;"><strong>Unit Price:</strong> ${AppCurrency.format(item.unitPrice)}</p>
+                <p style="margin: 5px 0;"><strong>Unit Price:</strong> ${AppCurrency.formatBoth(item.unitPrice)}</p>
                 <p style="margin: 5px 0;"><strong>Supplier:</strong> ${item.supplier}</p>
                 <p style="margin: 5px 0;"><strong>Expiry Date:</strong> ${item.expiryDate != null ? DateFormat('MMM dd, yyyy').format(item.expiryDate!) : 'No expiry date'}</p>
                 <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: ${daysUntilExpiry <= 0 ? '#dc3545' : '#fd7e14'}; font-weight: bold;">This item $timeText</span></p>
@@ -286,7 +286,7 @@ class NotificationService {
                 <p style="margin: 5px 0;"><strong>Current Stock:</strong> <span style="color: #dc3545; font-weight: bold;">${item.quantity} units</span></p>
                 <p style="margin: 5px 0;"><strong>Reorder Level:</strong> ${item.reorderLevel} units</p>
                 <p style="margin: 5px 0;"><strong>Supplier:</strong> ${item.supplier}</p>
-                <p style="margin: 5px 0;"><strong>Unit Price:</strong> ${AppCurrency.format(item.unitPrice)}</p>
+                <p style="margin: 5px 0;"><strong>Unit Price:</strong> ${AppCurrency.formatBoth(item.unitPrice)}</p>
               </div>
               
               <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid #ffeaa7;">
@@ -329,7 +329,7 @@ class NotificationService {
 📊 Current: ${item.quantity} unit${item.quantity == 1 ? '' : 's'}
 ⚠️ Reorder Level: ${item.reorderLevel} unit${item.reorderLevel == 1 ? '' : 's'}
 🏪 Supplier: ${item.supplier}
-💰 Unit Price: ${AppCurrency.format(item.unitPrice)}
+💰 Unit Price: ${AppCurrency.formatBoth(item.unitPrice)}
 
 Action needed: Reorder immediately!
 

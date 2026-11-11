@@ -63,6 +63,18 @@ class _UpgradeSheetContent extends StatelessWidget {
             _PlanTile(plan: plan, onChoose: () => onChoose(plan.name)),
             const SizedBox(height: 12),
           ],
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Text(
+              'A one-time deployment fee of ${PlansConfig.deploymentFeePercent}% of your monthly plan covers setup and onboarding.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                height: 1.5,
+                color: isDark ? Colors.white60 : Colors.black54,
+              ),
+            ),
+          ),
           Center(
             child: TextButton(
               onPressed: onTalk,
@@ -90,6 +102,7 @@ class _PlanTile extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final accent = theme.primaryColor;
     final muted = isDark ? Colors.white70 : Colors.black54;
+    final line = isDark ? Colors.white12 : Colors.black12;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -113,11 +126,9 @@ class _PlanTile extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  plan.name,
-                  style: GoogleFonts.poppins(
-                      fontSize: 18, fontWeight: FontWeight.w600),
-                ),
+                child: Text(plan.name,
+                    style: GoogleFonts.poppins(
+                        fontSize: 18, fontWeight: FontWeight.w600)),
               ),
               if (plan.recommended)
                 Container(
@@ -127,14 +138,11 @@ class _PlanTile extends StatelessWidget {
                     color: accent,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(
-                    'Most popular',
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: Text('Most popular',
+                      style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white)),
                 ),
             ],
           ),
@@ -146,13 +154,11 @@ class _PlanTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(
-                plan.priceKes,
-                style: GoogleFonts.poppins(
-                    fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(width: 8),
               Text(plan.priceUsd,
+                  style: GoogleFonts.poppins(
+                      fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 6),
+              Text('/ month',
                   style: GoogleFonts.poppins(fontSize: 13, color: muted)),
             ],
           ),
@@ -172,6 +178,28 @@ class _PlanTile extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 8),
+          Text('Pricing by team size',
+              style: GoogleFonts.poppins(
+                  fontSize: 12, fontWeight: FontWeight.w600, color: muted)),
+          const SizedBox(height: 4),
+          for (final tier in plan.tiers)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              decoration:
+                  BoxDecoration(border: Border(top: BorderSide(color: line))),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(tier.users,
+                        style: GoogleFonts.poppins(fontSize: 13)),
+                  ),
+                  Text('${tier.priceUsd}/month',
+                      style: GoogleFonts.poppins(
+                          fontSize: 13, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: plan.recommended
@@ -328,7 +356,7 @@ class UpgradeCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Keep using StockSense after your free trial with Entry, Mid or High.',
+                    'Keep using StockSense after your demo with Basic, Pro or Premium.',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       height: 1.4,
