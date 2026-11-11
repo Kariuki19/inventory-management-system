@@ -400,7 +400,7 @@ class AuthService {
       return user;
     } catch (e) {
       throw AuthException(
-          'Could not start the trial: ${_getAuthErrorMessage(e)}');
+          'Could not start the demo: ${_getAuthErrorMessage(e)}');
     }
   }
 

@@ -15,7 +15,7 @@ class StockMovementsScreen extends StatefulWidget {
   static const Color _selectedFilterColor = Color(0xFF4CAF50); // Green
   static const Color _unselectedFilterColorLight = Color(0xFF757575); // Grey
   static const Color _unselectedFilterColorDark =
-      Color(0xFFB0B0B0); // Light grey
+      Color(0xFFB0B0B0);
 
   @override
   State<StockMovementsScreen> createState() => _StockMovementsScreenState();

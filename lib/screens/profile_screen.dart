@@ -478,12 +478,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 (currentUser?.email ?? '').isNotEmpty
                     ? currentUser!.email
                     : (AuthService.isTrialSession
-                        ? 'Not required (free trial)'
+                        ? 'Not required (demo)'
                         : 'Not available')),
             _buildInfoRow(
                 'Role',
                 AuthService.isTrialSession
-                    ? 'Free Trial'
+                    ? 'Demo'
                     : (currentUser?.isAdmin == true ? 'Admin' : 'Staff')),
             if (currentUser?.isAdmin == true &&
                 currentUser?.organizationId != null)
@@ -881,7 +881,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         builder: (dialogContext) => AlertDialog(
           title: const Text('Security'),
           content: const Text(
-              'Free trial workspaces do not use a password. Paid plans use secure email sign-in.'),
+              'Demo workspaces do not use a password. Paid plans use secure email sign-in.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
