@@ -1354,7 +1354,7 @@ class _InventoryListScreenState extends State<InventoryListScreen>
                         icon: Icons.payments_outlined,
                         label: 'Unit Price',
                         // value: '\$${item.unitPrice.toStringAsFixed(2)}',
-                        value: AppCurrency.format(item.unitPrice),
+                        value: AppCurrency.formatBoth(item.unitPrice),
                       ),
                       const SizedBox(height: 12),
 

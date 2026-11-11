@@ -430,7 +430,8 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
                   ),
                   _buildMetricCard(
                     'Total Value',
-                    AppCurrency.format((stats['totalValue'] ?? 0).toDouble()),
+                    AppCurrency.formatBoth(
+                        (stats['totalValue'] ?? 0).toDouble()),
                     Icons.payments_outlined,
                     Colors.green,
                   ),
@@ -1271,12 +1272,12 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
               children: [
                 Text(item.category, style: GoogleFonts.poppins(fontSize: 12)),
                 Text(
-                    'Qty: ${item.quantity} • ${AppCurrency.format(item.unitPrice)}',
+                    'Qty: ${item.quantity} • ${AppCurrency.formatBoth(item.unitPrice)}',
                     style: GoogleFonts.poppins(fontSize: 10)),
               ],
             ),
             trailing: Text(
-              AppCurrency.format(value),
+              AppCurrency.formatBoth(value),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: Colors.green,
@@ -2048,7 +2049,7 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
                     pdfFromFlutterColor(themeColor)),
                 buildKpiCard(
                     "Total Value",
-                    AppCurrency.format(
+                    AppCurrency.formatBoth(
                         (dashboardStats['totalValue'] ?? 0).toDouble()),
                     PdfColors.blue),
                 buildKpiCard(
@@ -2074,15 +2075,15 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
               children: [
                 buildKpiCard(
                     "Daily Sales",
-                    "${daily['sales']} sales\n${AppCurrency.format(daily['revenue'])}",
+                    "${daily['sales']} sales\n${AppCurrency.formatBoth(daily['revenue'])}",
                     PdfColors.green),
                 buildKpiCard(
                     "Monthly Sales",
-                    "${monthly['sales']} sales\n${AppCurrency.format(monthly['revenue'])}",
+                    "${monthly['sales']} sales\n${AppCurrency.formatBoth(monthly['revenue'])}",
                     PdfColors.purple),
                 buildKpiCard(
                     "Yearly Sales",
-                    "${yearly['sales']} sales\n${AppCurrency.format(yearly['revenue'])}",
+                    "${yearly['sales']} sales\n${AppCurrency.formatBoth(yearly['revenue'])}",
                     PdfColors.teal),
               ],
             ),
@@ -2124,7 +2125,7 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
                   [
                     cat['category'] ?? 'Unknown',
                     cat['count'].toString(),
-                    AppCurrency.format(
+                    AppCurrency.formatBoth(
                         cat['value'] is num ? cat['value'] as num : 0)
                   ]
               ],
@@ -2540,7 +2541,7 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
 
           // Metric cards: render a 2x2 grid
           final totalItems = (stats['totalItems'] ?? 0).toString();
-          final totalValue = AppCurrency.format(
+          final totalValue = AppCurrency.formatBoth(
               ((stats['totalValue'] ?? 0) as num).toDouble());
           final lowStock = (stats['lowStockItems'] ?? 0).toString();
           final outOfStock = (stats['outOfStockItems'] ?? 0).toString();
@@ -2785,8 +2786,8 @@ class _SystemReportsScreenState extends State<SystemReportsScreen>
         rows.add([
           name,
           qty,
-          AppCurrency.format(unitPrice),
-          AppCurrency.format(value)
+          AppCurrency.formatBoth(unitPrice),
+          AppCurrency.formatBoth(value)
         ]);
       }
       return rows;

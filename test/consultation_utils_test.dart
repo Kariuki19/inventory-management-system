@@ -26,13 +26,14 @@ void main() {
     expect(body, contains('Plan: Pro'));
     expect(body, contains('Preferred contact: Email, WhatsApp'));
     expect(body, isNot(contains('Company:')));
+    expect(body, isNot(contains('Team size')));
     expect(body, isNot(contains('Demo minutes')));
   });
 
-  test('demo requests include minutes left, team size and the reference', () {
+  test('demo requests include team size, minutes left and the reference', () {
     final body = ConsultationRequest.buildBody(
-      plan: 'Pro',
-      teamSize: '10–15 users (\$80/month)',
+      plan: 'Basic',
+      teamSize: 'Up to 5 users (\$30/month)',
       name: 'A B',
       email: 'a@b.co',
       phone: '0712345678',
@@ -43,8 +44,9 @@ void main() {
       trialMinutesLeft: 25,
       trialReference: 'abc123',
     );
+    expect(body, contains('Plan: Basic'));
+    expect(body, contains('Team size: Up to 5 users (\$30/month)'));
     expect(body, contains('Source: In-app (demo)'));
-    expect(body, contains('Team size: 10–15 users (\$80/month)'));
     expect(body, contains('Demo minutes left: 25'));
     expect(body, contains('Demo reference: abc123'));
   });

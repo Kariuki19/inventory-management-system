@@ -41,8 +41,8 @@ class PlansConfig {
       audience: 'Small shops & boutiques',
       features: ['Add and manage items', 'Stock alerts', 'Expiry tracking'],
       tiers: [
-        PlanTier('5 users', '\$30'),
-        PlanTier('10 users', '\$40'),
+        PlanTier('Up to 5 users', '\$30'),
+        PlanTier('6–10 users', '\$40'),
       ],
     ),
     PlanInfo(
@@ -58,8 +58,8 @@ class PlansConfig {
       ],
       tiers: [
         PlanTier('10–15 users', '\$80'),
-        PlanTier('15–20 users', '\$90'),
-        PlanTier('20–25 users', '\$100'),
+        PlanTier('16–20 users', '\$90'),
+        PlanTier('21–25 users', '\$100'),
       ],
       recommended: true,
     ),

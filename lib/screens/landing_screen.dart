@@ -173,7 +173,7 @@ class _RenderEqualHeightRow extends RenderBox
     }
   }
 
-  @override
+    @override
   void performLayout() {
     assert(constraints.hasBoundedWidth);
     final count = childCount;
@@ -197,17 +197,29 @@ class _RenderEqualHeightRow extends RenderBox
       child = childAfter(child);
     }
 
-    // Pass 2: stretch every child to the tallest one and place it.
+    // Pass 2: stretch every child to at least the tallest one. The height is
+    // a MINIMUM, not a fixed value, and the parent uses the size, so a child
+    // that grows later (for example when a web font finishes loading) re-runs
+    // this layout instead of overflowing inside its own fixed-height box.
+    var height = 0.0;
     var x = 0.0;
     child = firstChild;
     while (child != null) {
-      child.layout(BoxConstraints.tightFor(width: childWidth, height: tallest));
+      child.layout(
+        BoxConstraints(
+          minWidth: childWidth,
+          maxWidth: childWidth,
+          minHeight: tallest,
+        ),
+        parentUsesSize: true,
+      );
       (child.parentData! as _EqualHeightParentData).offset = Offset(x, 0);
+      height = math.max(height, child.size.height);
       x += childWidth + _gap;
       child = childAfter(child);
     }
 
-    size = constraints.constrain(Size(width, tallest));
+    size = constraints.constrain(Size(width, height));
   }
 
   @override

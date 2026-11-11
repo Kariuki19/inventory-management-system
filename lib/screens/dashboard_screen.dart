@@ -353,7 +353,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String _formatCurrency(dynamic value) {
-    if (value == null) return AppCurrency.format(0);
+    if (value == null) return AppCurrency.formatBoth(0);
     final numericValue = value is num
         ? value.toDouble()
         : (double.tryParse(value.toString()) ?? 0);
@@ -363,17 +363,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _formatLargeNumber(double value, {bool isCurrency = false}) {
     // Full numbers with thousands separators: KES 3,000 / KES 3,000,000.
     return isCurrency
-        ? AppCurrency.format(value)
+        ? AppCurrency.formatBoth(value)
         : NumberFormat('#,##0').format(value.toInt());
   }
 
   String _getFullFormattedValue(dynamic value, {bool isCurrency = false}) {
-    if (value == null) return isCurrency ? AppCurrency.format(0) : '0';
+    if (value == null) return isCurrency ? AppCurrency.formatBoth(0) : '0';
     final numericValue = value is num
         ? value.toDouble()
         : (double.tryParse(value.toString()) ?? 0);
     return isCurrency
-        ? AppCurrency.format(numericValue)
+        ? AppCurrency.formatBoth(numericValue)
         : NumberFormat('#,###').format(numericValue.toInt());
   }
 
@@ -388,7 +388,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // Full value for the tooltip
     String fullValue = value;
     if (title == 'Total Value') {
-      fullValue = AppCurrency.format(dashboardStats['totalValue'] ?? 0);
+      fullValue = AppCurrency.formatBoth(dashboardStats['totalValue'] ?? 0);
     } else if (title == 'Total Items') {
       fullValue = _getFullFormattedValue(dashboardStats['totalItems']);
     } else if (title == 'Low Stock') {
@@ -400,10 +400,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final isSmallScreen = MediaQuery.of(context).size.width < 400;
     final tooltipMessage = isSmallScreen ? fullValue : '$title: $fullValue';
 
+    final displayTitle = title == 'Total Value'
+        ? 'Total Value · ${AppCurrency.usd(dashboardStats['totalValue'] ?? 0)}'
+        : title;
+
     return Tooltip(
       message: tooltipMessage,
       child: StatCard(
-        title: title,
+        title: displayTitle,
         value: value,
         icon: icon,
         color: color,

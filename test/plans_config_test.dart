@@ -15,12 +15,12 @@ void main() {
         ['\$40', '\$100', '\$350']);
   });
 
-  test('team size prices match the proposal', () {
-    expect(tiers('Basic'), ['5 users = \$30', '10 users = \$40']);
+  test('team size prices match the proposal without overlapping ranges', () {
+    expect(tiers('Basic'), ['Up to 5 users = \$30', '6–10 users = \$40']);
     expect(tiers('Pro'), [
       '10–15 users = \$80',
-      '15–20 users = \$90',
-      '20–25 users = \$100',
+      '16–20 users = \$90',
+      '21–25 users = \$100',
     ]);
     expect(tiers('Premium'), [
       '50–60 users = \$330',
